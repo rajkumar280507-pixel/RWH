@@ -19,7 +19,7 @@ export const EMPTY_FILTERS = {
   state: "",
   district: "",
   taluk: "",
-  maxAgeDays: 30,
+  maxAgeDays: 365,
   search: "",
   showGroundwater: true,
   showRainfall: true,
