@@ -2,8 +2,8 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://rwh-dss-backend.loca.lt/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "https://rwh-dss-backend.loca.lt/api/$1"
     },
     {
       "source": "/(.*)",

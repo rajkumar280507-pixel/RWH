@@ -3,7 +3,9 @@ import axios from "axios";
 // In dev, Vite proxies "/api" to localhost:8000 (see vite.config.js). In a
 // static deploy (e.g. Vercel) there's no proxy, so VITE_API_URL must point
 // at wherever the backend actually runs.
-const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api";
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`
+  : "/api";
 
 export const api = axios.create({
   baseURL: API_BASE,
