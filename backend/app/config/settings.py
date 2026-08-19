@@ -1,5 +1,6 @@
 """Centralized application settings, loaded from environment variables / .env."""
 from functools import lru_cache
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,15 @@ class Settings(BaseSettings):
     database_url: str = (
         "mysql+pymysql://rwh:rwh_app_pw@localhost:3306/rwh"
     )
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_pymysql_driver(cls, v: str) -> str:
+        # Managed MySQL hosts (Railway, etc.) hand out plain mysql:// URLs;
+        # SQLAlchemy needs the driver named explicitly.
+        if v.startswith("mysql://"):
+            return "mysql+pymysql://" + v[len("mysql://") :]
+        return v
 
     redis_url: str = "redis://localhost:6379/0"
 
