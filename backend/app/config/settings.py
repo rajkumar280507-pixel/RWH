@@ -30,7 +30,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 12
 
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://rwh-iota.vercel.app",
+    ]
 
     # CGWB National Water Informatics Data Portal (NWDP) resources
     cgwb_groundwater_url: str = (
