@@ -18,7 +18,6 @@ Tailwind · Leaflet · ECharts.
 | **Dashboard** | `/` | Live stat cards, station map, sync activity feed over WebSocket |
 | **GIS Map** | `/gis-map` | Full station network, basemap switcher, state/district/taluk + freshness filters, click-through station history charts |
 | **RWH Design** | `/rwh-design` | Draw a rooftop → complete recharge design, hydraulics, BOQ, 20-step calculation sheet |
-| **Predictions** | `/predictions` | Least-squares groundwater trend per station with confidence and caveats |
 | **Reports** | `/reports` | Saved designs with printable full engineering report |
 
 ---
