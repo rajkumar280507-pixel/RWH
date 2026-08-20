@@ -18,4 +18,4 @@ EXPOSE 8000
 # reverse proxy fronting multiple containers with the scheduler disabled on
 # all but one (RWH_SCHEDULER_ENABLED=false) once that flag exists, or split
 # the scheduler into its own service.
-CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "-w", "1", "-b", "0.0.0.0:8000", "--timeout", "120"]
+CMD gunicorn main:app -k uvicorn.workers.UvicornWorker -w 1 -b 0.0.0.0:${PORT:-8000} --timeout 120
