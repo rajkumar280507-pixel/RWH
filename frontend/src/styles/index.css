@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens
+ * -------------
+ * Engineering-domain + semantic colors, expressed as "R G B" triplets so
+ * Tailwind's `rgb(var(--x) / <alpha-value>)` pattern (see tailwind.config.js)
+ * can apply opacity modifiers (e.g. bg-sand/50) on top of them.
+ *
+ * `:root` (no class) holds the LIGHT palette. `.dark` on <html> overrides it
+ * with the DARK palette. The app has been dark-only until now, so
+ * src/main.jsx applies `.dark` synchronously before first paint whenever no
+ * theme preference is stored yet — existing users keep seeing the same dark
+ * shell, and the light palette only appears once someone actively toggles.
+ */
+
+:root {
+  /* Engineering-domain palette (light) */
+  --color-ground: 146 64 14; /* warm brown */
+  --color-topsoil: 192 133 82; /* light brown */
+  --color-clay: 120 53 15; /* dark brown */
+  --color-sand: 217 119 6; /* golden yellow */
+  --color-gravel: 107 114 128; /* gray */
+  --color-aggregate: 55 65 81; /* dark gray */
+  --color-rock: 71 85 105; /* slate */
+  --color-groundwater: 37 99 235; /* blue */
+  --color-recharge-water: 8 145 178; /* cyan */
+  --color-rainfall-light: 147 197 253;
+  --color-rainfall: 59 130 246;
+  --color-rainfall-dark: 29 78 216;
+
+  /* Semantic (light) */
+  --color-warning: 245 158 11; /* amber */
+  --color-danger: 239 68 68; /* red */
+  --color-success: 16 185 129; /* emerald */
+  --color-info: 14 165 233; /* sky blue */
+
+  /* Glass-morphism (light) */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-blur: 16px;
+}
+
+.dark {
+  /* Engineering-domain palette (dark) */
+  --color-ground: 180 83 9;
+  --color-topsoil: 214 160 109;
+  --color-clay: 146 64 14;
+  --color-sand: 251 191 36;
+  --color-gravel: 156 163 175;
+  --color-aggregate: 75 85 99;
+  --color-rock: 100 116 139;
+  --color-groundwater: 96 165 250;
+  --color-recharge-water: 34 211 238;
+  --color-rainfall-light: 191 219 254;
+  --color-rainfall: 96 165 250;
+  --color-rainfall-dark: 37 99 235;
+
+  /* Semantic (dark) */
+  --color-warning: 251 191 36;
+  --color-danger: 248 113 113;
+  --color-success: 52 211 153;
+  --color-info: 56 189 248;
+
+  /* Glass-morphism (dark) */
+  --glass-bg: rgba(17, 26, 46, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 16px;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+/* Maps read better with a dark base regardless of app theme, so this stays
+   a literal color rather than a token. */
+.leaflet-container {
+  background: #0b1220;
+}
+
+/* Reusable glass-morphism utility, built from the tokens above. Tailwind's
+   backdrop-blur-* utilities already cover blur; this class is for the
+   background/border pairing used across floating panels. */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}

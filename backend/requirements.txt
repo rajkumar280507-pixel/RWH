@@ -1,0 +1,31 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+gunicorn==23.0.0
+sqlalchemy==2.0.35
+geoalchemy2==0.15.2
+psycopg[binary]==3.2.2
+alembic==1.13.2
+pydantic==2.9.2
+pydantic-settings==2.5.2
+apscheduler==3.10.4
+httpx==0.27.2
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+redis==5.0.8
+websockets==13.1
+tenacity==9.0.0
+shapely==2.0.6
+pyproj==3.6.1
+python-dateutil==2.9.0.post0
+
+# Phase 7: PDF report generation.
+# WeasyPrint was tried first but requires native GTK/Pango/Cairo libraries
+# (libgobject-2.0-0 etc.) that are not present on this Windows dev box and
+# fail at import time (OSError: cannot load library 'libgobject-2.0-0').
+# xhtml2pdf is pure-Python (reportlab-based), installs cleanly on Windows,
+# and its CSS support (2.1-era subset, table layout, no flexbox/grid) is
+# sufficient for a printable engineering-report template.
+xhtml2pdf==0.2.17
+qrcode[pil]==8.2
+Jinja2==3.1.6

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>RWH Engineering Design Report — Design #{{ design.id }}</title>
+<style>
+  /* xhtml2pdf supports a 2.1-era CSS subset: no flexbox/grid, limited
+     @media/box-shadow. Layout below is deliberately table/block based. */
+  @page {
+    size: A4;
+    margin: 2cm 1.6cm;
+    @frame footer_frame {
+      -pdf-frame-content: footer_content;
+      bottom: 1cm; margin-left: 1.6cm; margin-right: 1.6cm; height: 1cm;
+    }
+  }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; }
+  h1 { font-size: 20pt; color: #0f3d5c; margin-bottom: 2pt; }
+  h2 { font-size: 13pt; color: #0f3d5c; border-bottom: 1pt solid #0f3d5c; padding-bottom: 3pt; margin-top: 16pt; margin-bottom: 8pt; }
+  h3 { font-size: 10.5pt; color: #0f3d5c; margin-bottom: 4pt; }
+  p { line-height: 1.45; margin: 4pt 0; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8pt; }
+  th, td { border: 0.5pt solid #b9c4cc; padding: 4pt 6pt; font-size: 9pt; text-align: left; vertical-align: top; }
+  th { background-color: #eaf1f6; color: #0f3d5c; font-weight: bold; }
+  .cover { text-align: center; padding-top: 3cm; }
+  .cover .subtitle { font-size: 12pt; color: #44586a; margin-bottom: 30pt; }
+  .cover-table { width: 70%; margin: 0 auto 20pt auto; }
+  .cover-table td { border: none; padding: 3pt 8pt; font-size: 10.5pt; }
+  .cover-table td.label { color: #667685; width: 40%; text-align: right; }
+  .cover-table td.value { font-weight: bold; text-align: left; }
+  .badge { display: inline; padding: 2pt 8pt; border: 0.5pt solid #0f3d5c; border-radius: 3pt; font-size: 8.5pt; color: #0f3d5c; }
+  .note { background-color: #fff8e6; border: 0.5pt solid #e0c168; padding: 6pt 8pt; font-size: 8.5pt; color: #6b5416; margin: 6pt 0; }
+  .warning { background-color: #fdeceb; border: 0.5pt solid #d97a72; padding: 6pt 8pt; font-size: 8.5pt; color: #8a2e26; margin: 6pt 0; }
+  .priority-high { color: #a12920; font-weight: bold; }
+  .priority-medium { color: #8a6a10; font-weight: bold; }
+  .priority-low { color: #1c7a4d; font-weight: bold; }
+  .drawing-img { width: 100%; max-height: 9cm; border: 0.5pt solid #b9c4cc; }
+  .two-col { width: 100%; }
+  .two-col td { border: none; vertical-align: top; width: 50%; padding: 4pt; }
+  .small { font-size: 8pt; color: #667685; }
+  .qr-block td { border: none; vertical-align: middle; }
+  .sig-table td { border: none; padding-top: 26pt; }
+  .sig-line { border-top: 0.75pt solid #1a1a1a; padding-top: 3pt; width: 80%; }
+  .footer { font-size: 7.5pt; color: #8a97a1; text-align: center; }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div id="footer_content" class="footer">
+  RWH-DSS &mdash; Rooftop Rainwater Harvesting Decision Support System &middot; Design #{{ design.id }} &middot; Generated {{ generated_at }} &middot; Page <pdf:pagenumber /> of <pdf:pagecount />
+</div>
+
+<!-- ============================= COVER PAGE ============================= -->
+<div class="cover">
+  <h1>Rooftop Rainwater Harvesting</h1>
+  <div class="subtitle">Engineering Design &amp; Recharge Structure Report</div>
+
+  <table class="cover-table">
+    <tr><td class="label">Project / Site:</td><td class="value">{{ building.name or ('Building #' ~ design.building_id) }}</td></tr>
+    <tr><td class="label">Site type:</td><td class="value">{{ (building.building_type or 'Not recorded') | title }}</td></tr>
+    <tr><td class="label">Client:</td><td class="value">Not recorded in system (no client-record module)</td></tr>
+    <tr><td class="label">Design reference:</td><td class="value">Design #{{ design.id }} (v{{ design.design_version }})</td></tr>
+    <tr><td class="label">Recharge structure type:</td><td class="value">{{ design.structure_type | replace('_', ' ') | title }}</td></tr>
+    <tr><td class="label">Design status:</td><td class="value">{{ design.status | title }}</td></tr>
+    <tr><td class="label">Designed / saved on:</td><td class="value">{{ design.created_at }}</td></tr>
+    <tr><td class="label">Report generated on:</td><td class="value">{{ generated_at }}</td></tr>
+    <tr><td class="label">Prepared by:</td><td class="value">{{ prepared_by_name or 'Not specified' }}{% if prepared_by_designation %} ({{ prepared_by_designation }}){% endif %}</td></tr>
+  </table>
+
+  <p class="small">This report was compiled from the persisted RWH-DSS design record. It presents final
+  computed design values, structure dimensions and the bill of quantities as stored at save time.</p>
+</div>
+
+<div class="pagebreak"></div>
+
+<!-- ============================= SITE & HYDROLOGY ============================= -->
+<h2>1. Site &amp; Hydrology</h2>
+<table>
+  <tr><th>Parameter</th><th>Value</th><th>Parameter</th><th>Value</th></tr>
+  <tr>
+    <td>Catchment (roof) area</td><td>{{ '%.2f'|format(design.catchment_area_sqm or 0) }} m&sup2;</td>
+    <td>Runoff coefficient</td><td>{{ '%.3f'|format(design.runoff_coefficient or 0) }}</td>
+  </tr>
+  <tr>
+    <td>Annual rainfall</td><td>{{ '%.1f'|format(design.annual_rainfall_mm or 0) }} mm</td>
+    <td>Hydrologic soil group</td><td>{{ design.hydrologic_soil_group or '—' }}</td>
+  </tr>
+  <tr>
+    <td>Groundwater depth (bgl)</td><td>{{ '%.2f'|format(design.groundwater_depth_m or 0) }} m</td>
+    <td>Building type</td><td>{{ (building.building_type or '—') | title }}</td>
+  </tr>
+  <tr>
+    <td>Annual harvest volume</td><td>{{ '%.2f'|format(design.annual_harvest_m3 or 0) }} m&sup3;/yr</td>
+    <td>Annual recharge volume</td><td>{{ '%.2f'|format(design.annual_recharge_m3 or 0) }} m&sup3;/yr</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>Note on calculation working:</strong> the full step-by-step calculation sheet (governing
+  formulas, substituted values and IS/CGWB/CPHEEO references for every quantity, as shown in the
+  design wizard at the moment of creation) is not persisted to the database — only the final
+  computed values above and the structure/BOQ tables below are stored against a saved design. This
+  report shows those persisted final values honestly, rather than reconstructing or estimating the
+  intermediate working after the fact.
+</div>
+
+<!-- ============================= STRUCTURE DETAILS ============================= -->
+<h2>2. Recharge Structure Details</h2>
+
+{% if pits %}
+<h3>Recharge Pit{% if pits|length > 1 %}s ({{ pits|length }}){% endif %}</h3>
+<table>
+  <tr><th>#</th><th>Diameter (m)</th><th>Depth (m)</th><th>Freeboard (m)</th><th>Volume each (m&sup3;)</th></tr>
+  {% for p in pits %}
+  <tr><td>{{ loop.index }}</td><td>{{ '%.2f'|format(p.diameter_m) }}</td><td>{{ '%.2f'|format(p.depth_m) }}</td><td>{{ '%.2f'|format(p.freeboard_m) }}</td><td>{{ '%.3f'|format(p.volume_m3) }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if trenches %}
+<h3>Recharge Trench{% if trenches|length > 1 %}es{% endif %}</h3>
+<table>
+  <tr><th>Width (m)</th><th>Depth (m)</th><th>Total length (m)</th><th>Segments</th><th>Volume (m&sup3;)</th></tr>
+  {% for t in trenches %}
+  <tr><td>{{ '%.2f'|format(t.width_m) }}</td><td>{{ '%.2f'|format(t.depth_m) }}</td><td>{{ '%.2f'|format(t.total_length_m) }}</td><td>{{ t.segment_count }} &times; {{ '%.2f'|format(t.segment_length_m) }} m</td><td>{{ '%.3f'|format(t.volume_m3) }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if borewells %}
+<h3>Injection Borewell (Conceptual)</h3>
+<table>
+  <tr><th>Trigger</th><th>Conceptual depth (m)</th></tr>
+  {% for b in borewells %}
+  <tr><td>{{ b.trigger_reason }}</td><td>{{ '%.1f'|format(b.conceptual_depth_m or 0) }}</td></tr>
+  {% endfor %}
+</table>
+{% for b in borewells %}
+<div class="warning">&#9888; {{ b.warning_text }}</div>
+{% endfor %}
+{% endif %}
+
+{% if filter_media %}
+<h3>Filter Media Stack</h3>
+<table>
+  <tr><th>Layer</th><th>Particle size</th><th>Vol. (m&sup3;)</th><th>Weight (kg)</th><th>Porosity</th><th>K (mm/hr)</th></tr>
+  {% for l in filter_media %}
+  <tr>
+    <td>{{ l.material }}</td>
+    <td>{{ l.particle_size_note or '—' }}</td>
+    <td>{{ '%.3f'|format(l.volume_m3 or 0) }}</td>
+    <td>{{ '%.1f'|format(l.weight_kg or 0) }}</td>
+    <td>{{ '%.2f'|format(l.porosity or 0) }}</td>
+    <td>{{ '%.0f'|format(l.hydraulic_conductivity_mm_hr or 0) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if cad_drawing_image or snapshot_3d_image %}
+<div class="pagebreak"></div>
+<h2>3. Engineering Drawings</h2>
+{% if cad_drawing_image %}
+<h3>Scaled 2D CAD Drawing (plan / section)</h3>
+<img class="drawing-img" src="{{ cad_drawing_image }}" />
+{% endif %}
+{% if snapshot_3d_image %}
+<h3>3D Structure Preview</h3>
+<img class="drawing-img" src="{{ snapshot_3d_image }}" />
+{% endif %}
+{% else %}
+<h2>3. Engineering Drawings</h2>
+<p class="small">No 2D CAD drawing or 3D preview image was supplied for this report. Drawings can be
+captured from the design wizard's 2D/3D tabs at design-creation time and attached to future report
+generations for this design.</p>
+{% endif %}
+
+<div class="pagebreak"></div>
+
+<!-- ============================= BOQ ============================= -->
+<h2>4. Bill of Quantities</h2>
+{% if boq %}
+<table>
+  <tr><th>Item</th><th>Unit</th><th>Quantity</th><th>Rate (&#8377;)</th><th>Amount (&#8377;)</th></tr>
+  {% for item in boq %}
+  <tr>
+    <td>{{ item.item }}</td>
+    <td>{{ item.unit }}</td>
+    <td>{{ '%.3f'|format(item.quantity) }}</td>
+    <td>{{ '%.2f'|format(item.unit_rate_inr or 0) }}</td>
+    <td>{{ '%.2f'|format(item.amount_inr or 0) }}</td>
+  </tr>
+  {% endfor %}
+  <tr><td colspan="4" style="text-align:right;"><strong>Total estimated cost</strong></td><td><strong>&#8377; {{ '{:,.2f}'.format(boq_total) }}</strong></td></tr>
+</table>
+{% else %}
+<p class="small">No bill-of-quantities line items are recorded for this design.</p>
+{% endif %}
+
+<!-- ============================= DECISION SUPPORT ============================= -->
+<h2>5. Decision Support Recommendation</h2>
+<p class="small"><em>Rule-based guidance generated from the persisted design figures above &mdash;
+this is not an AI/LLM-generated recommendation; no such model is called by this system.</em></p>
+<p>
+  <span class="priority-{{ recommendation.priority | lower }}">[{{ recommendation.priority }} priority]</span>
+  {{ recommendation.headline }}
+</p>
+<ul>
+  {% for reason in recommendation.reasons %}
+  <li>{{ reason }}</li>
+  {% endfor %}
+</ul>
+
+<div class="pagebreak"></div>
+
+<!-- ============================= CONSTRUCTION SEQUENCE ============================= -->
+<h2>6. Construction Sequence</h2>
+<p>The following is a generic construction sequence for a rooftop-fed {{ design.structure_type | replace('_', ' ') }},
+consistent with IS 15797:2008 (Roof Top Rain Water Harvesting &mdash; Guidelines) and the CGWB Master
+Plan for Artificial Recharge to Ground Water. Site-specific supervision by a qualified engineer is
+required; this sequence does not replace project-specific working drawings.</p>
+<ol>
+  <li>Mark out structure location and verify setback from building foundation, boundary and any
+      existing utilities/services.</li>
+  <li>Excavate to the design depth and dimensions; keep excavated sides stable (shore/batter as
+      required by soil type and depth).</li>
+  <li>Verify the base of excavation is below the design invert level and reasonably level and
+      compacted.</li>
+  <li>Install the pre-filter / desilting chamber upstream of the structure so first-flush and
+      coarse silt are intercepted before reaching the recharge zone.</li>
+  <li>Place filter media in layers, coarsest at the bottom, finest near the inflow, per the filter
+      media stack in Section 2 &mdash; each layer compacted lightly and kept clean of surrounding soil.</li>
+  <li>Construct/lower lining (brick masonry ring / PCC rings / HDPE casing as specified) with
+      weep holes or perforations sized per the design.</li>
+  <li>Connect roof downpipes to the conveyance pipe network, sized per the hydraulic design, with a
+      first-flush diverter fitted ahead of the structure inlet.</li>
+  <li>Provide an overflow pipe set at the design freeboard level, directed to an approved safe
+      disposal point (storm drain / soak zone).</li>
+  <li>Cap/cover the structure with a removable, safety-compliant cover (RCC slab with inspection
+      chamber, or equivalent) to allow future desilting access while preventing accidental entry.</li>
+  <li>Backfill around the structure in layers, compacting as per good practice, and reinstate the
+      surrounding surface.</li>
+  <li>Commission: flush the system, confirm free drainage/infiltration, and record as-built
+      dimensions against this design.</li>
+</ol>
+
+<h2>7. Technical Notes</h2>
+<ul>
+  <li>Structure sizing follows the rational-method water balance (catchment area &times; rainfall
+      &times; runoff coefficient), first-flush allowance and CGWB artificial-recharge efficiency
+      factors used by the RWH-DSS design engine.</li>
+  <li>Filter media gradation and hydraulic conductivity values follow standard graded-filter
+      practice for rooftop recharge structures (coarse aggregate/gravel/sand layering).</li>
+  <li>Where an injection borewell is indicated, it is a conceptual recommendation only &mdash; a
+      licensed hydrogeologist/driller must confirm aquifer suitability, casing design and
+      chlorination/development procedure before construction, per CGWB guidelines.</li>
+  <li>All dimensions in this report are as computed/stored by the design engine at design-creation
+      time; site verification of levels, utilities and soil conditions is required before
+      construction.</li>
+</ul>
+
+<h2>8. Maintenance Schedule</h2>
+<table>
+  <tr><th>Activity</th><th>Frequency</th><th>Notes</th></tr>
+  <tr><td>Inspect first-flush diverter / roof gutters</td><td>Before each monsoon, and after heavy storms</td><td>Clear leaves and debris; ensure diverter drains fully between rain events.</td></tr>
+  <tr><td>Desilting of pre-filter / desilting chamber</td><td>Annually, before monsoon onset</td><td>Remove accumulated silt; more frequent desilting may be needed in high-sediment catchments.</td></tr>
+  <tr><td>Inspect filter media stack</td><td>Every 1&ndash;2 years, or if infiltration visibly slows</td><td>Top (fine) layer typically needs replacement first; wash/replace clogged media per IS 15797 guidance.</td></tr>
+  <tr><td>Check structure cover / inspection chamber</td><td>Annually</td><td>Confirm cover is intact and secure for safety.</td></tr>
+  <tr><td>Monitor recharge performance</td><td>Ongoing (each monsoon season)</td><td>Compare observed infiltration/emptying time against the design time-to-empty; investigate if significantly slower.</td></tr>
+  <tr><td>Full media replacement</td><td>Every 5&ndash;10 years (site-dependent)</td><td>Replace all filter layers if desilting/washing no longer restores infiltration capacity.</td></tr>
+</table>
+
+<div class="pagebreak"></div>
+
+<!-- ============================= VERIFICATION & SIGN-OFF ============================= -->
+<h2>9. Report Verification</h2>
+<table class="qr-block">
+  <tr>
+    <td style="width: 30%;"><img src="{{ qr_code_data_uri }}" style="width: 3cm; height: 3cm;" /></td>
+    <td>
+      <p>Scan this QR code, or visit the URL below, to look up this design record in RWH-DSS:</p>
+      <p><strong>{{ verification_url }}</strong></p>
+      <p class="small">The QR code links to the design record for reference/verification purposes
+      only. It does not constitute a cryptographic or digital signature of this document.</p>
+    </td>
+  </tr>
+</table>
+
+<h2>10. Sign-off</h2>
+<p class="small">The fields below are typed name / designation / date entries recorded at report
+generation time. They are <strong>not</strong> a digital or cryptographic signature and carry no
+cryptographic verification &mdash; this system has no multi-user authentication layer to support that.</p>
+<table class="sig-table">
+  <tr>
+    <td style="width:50%;">
+      <div class="sig-line">
+        Prepared by: {{ prepared_by_name or '_________________________' }}<br/>
+        Designation: {{ prepared_by_designation or '_________________________' }}<br/>
+        Date: {{ generated_at_date }}
+      </div>
+    </td>
+    <td style="width:50%;">
+      <div class="sig-line">
+        Reviewed by: {{ reviewed_by_name or '_________________________' }}<br/>
+        Designation: {{ reviewed_by_designation or '_________________________' }}<br/>
+        Date: {{ generated_at_date }}
+      </div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
