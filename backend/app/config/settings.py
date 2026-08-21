@@ -1,5 +1,6 @@
 """Centralized application settings, loaded from environment variables / .env."""
 from functools import lru_cache
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,19 +15,30 @@ class Settings(BaseSettings):
         "mysql+pymysql://rwh:rwh_app_pw@localhost:3306/rwh"
     )
 
+    @field_validator("database_url")
+    @classmethod
+    def _use_pymysql_driver(cls, v: str) -> str:
+        # Managed MySQL hosts (Railway, etc.) hand out plain mysql:// URLs;
+        # SQLAlchemy needs the driver named explicitly.
+        if v.startswith("mysql://"):
+            return "mysql+pymysql://" + v[len("mysql://") :]
+        return v
+
     redis_url: str = "redis://localhost:6379/0"
 
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 12
 
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://rwh-iota.vercel.app",
+    ]
 
     # Public URL of the deployed frontend, used to build the QR-code
-    # verification link embedded in generated PDF reports (Phase 7). No such
-    # value existed in the codebase before; defaults to the local Vite dev
-    # server origin, matching the first entry of cors_origins.
-    frontend_url: str = "http://localhost:5173"
+    # verification link embedded in generated PDF reports (Phase 7).
+    frontend_url: str = "https://rwh-iota.vercel.app"
 
     # CGWB National Water Informatics Data Portal (NWDP) resources
     cgwb_groundwater_url: str = (
