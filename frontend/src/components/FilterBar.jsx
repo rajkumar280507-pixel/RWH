@@ -33,7 +33,12 @@ export const EMPTY_FILTERS = {
 };
 
 export default function FilterBar({ filters, onChange, showLayers = false }) {
-  const options = useQuery({ queryKey: ["filter-options"], queryFn: getFilterOptions, staleTime: 300_000 });
+  const options = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: getFilterOptions,
+    staleTime: 60_000,
+    retry: 2,
+  });
 
   const districts = filters.state
     ? options.data?.districts_by_state?.[filters.state] ?? []
@@ -81,6 +86,15 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
               {activeCount} active
             </span>
           )}
+          {options.isError && (
+            <button
+              type="button"
+              onClick={() => options.refetch()}
+              className="text-[10px] font-medium text-rose-400 underline hover:text-rose-300"
+            >
+              ⚠ Retry options fetch
+            </button>
+          )}
         </div>
         <button
           type="button"
@@ -96,6 +110,7 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
         <Control label="State">
           <select className={FILTER_INPUT_CLS} value={filters.state ?? ""} onChange={set("state")}>
             <option value="">All states</option>
+            {options.isLoading && <option disabled value="">Loading states...</option>}
             {(options.data?.states ?? []).map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -105,6 +120,7 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
         <Control label="District">
           <select className={FILTER_INPUT_CLS} value={filters.district ?? ""} onChange={set("district")}>
             <option value="">All districts</option>
+            {options.isLoading && <option disabled value="">Loading districts...</option>}
             {districts.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
@@ -118,6 +134,7 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
             onChange={set("taluk")}
           >
             <option value="">All taluks</option>
+            {options.isLoading && <option disabled value="">Loading taluks...</option>}
             {taluks.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}

@@ -116,6 +116,7 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ["gw-latest"] });
       queryClient.invalidateQueries({ queryKey: ["rf-latest"] });
       queryClient.invalidateQueries({ queryKey: ["sync-runs"] });
+      queryClient.invalidateQueries({ queryKey: ["filter-options"] });
     }
   }, [lastEvent, queryClient]);
 

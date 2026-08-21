@@ -24,7 +24,8 @@ _STATS_SQL = text(
 @router.get("/stats", response_model=DashboardStats)
 def dashboard_stats(db: Session = Depends(get_db)):
     row = db.execute(_STATS_SQL).mappings().one()
-    return DashboardStats(**row)
+    return DashboardStats.model_validate(row)
+
 
 
 @router.get("/district-summary")

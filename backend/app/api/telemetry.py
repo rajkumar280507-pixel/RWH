@@ -72,7 +72,7 @@ def latest_groundwater(
             "limit": limit,
         },
     ).mappings().all()
-    return [GwReadingOut(**row) for row in rows]
+    return [GwReadingOut.model_validate(row) for row in rows]
 
 
 @router.get("/rainfall/latest", response_model=list[RainfallReadingOut])
@@ -96,7 +96,7 @@ def latest_rainfall(
             "limit": limit,
         },
     ).mappings().all()
-    return [RainfallReadingOut(**row) for row in rows]
+    return [RainfallReadingOut.model_validate(row) for row in rows]
 
 
 @router.get("/filter-options")

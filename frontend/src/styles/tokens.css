@@ -1,0 +1,57 @@
+/* Design tokens. Values are "r g b" triplets (no rgb()/commas) so Tailwind's
+   rgb(var(--x) / <alpha-value>) pattern can apply opacity modifiers.
+   Dark is the default brand look (matches the original hardcoded shell);
+   :root[data-theme="light"] overrides it via the .dark / non-.dark class
+   toggle applied to <html> by uiStore + ThemeToggle. */
+
+:root {
+  /* Surface hierarchy */
+  --color-surface: 11 18 32;
+  --color-panel: 17 26 46;
+  --color-base: 11 18 32;
+  --color-elevated: 17 26 46;
+  --color-border: 30 41 59;
+  --color-muted: 100 116 139;
+  --color-foreground: 241 245 249;
+
+  /* Brand */
+  --color-accent: 45 212 191;
+  --color-accent-blue: 59 130 246;
+
+  /* Engineering-domain tokens (data-viz — stay consistent across themes) */
+  --color-ground: 146 112 63;
+  --color-topsoil: 180 83 9;
+  --color-clay: 120 53 15;
+  --color-sand: 234 179 8;
+  --color-gravel: 100 116 139;
+  --color-aggregate: 71 85 105;
+  --color-rock: 30 41 59;
+  --color-groundwater: 2 132 199;
+  --color-recharge-water: 34 211 238;
+  --color-rainfall: 59 130 246;
+
+  /* Semantic */
+  --color-warning: 245 158 11;
+  --color-danger: 244 63 94;
+  --color-success: 34 197 94;
+  --color-info: 59 130 246;
+
+  /* Glass-morphism */
+  --glass-bg: rgb(17 26 46 / 0.55);
+  --glass-border: rgb(148 163 184 / 0.15);
+  --glass-blur: 12px;
+}
+
+/* Light theme — applied when <html> does NOT have the .dark class */
+:root:not(.dark) {
+  --color-surface: 248 250 252;
+  --color-panel: 255 255 255;
+  --color-base: 248 250 252;
+  --color-elevated: 255 255 255;
+  --color-border: 226 232 240;
+  --color-muted: 100 116 139;
+  --color-foreground: 15 23 42;
+
+  --glass-bg: rgb(255 255 255 / 0.65);
+  --glass-border: rgb(15 23 42 / 0.08);
+}

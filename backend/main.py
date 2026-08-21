@@ -3,6 +3,7 @@
 Wires: CORS, REST routers (auth, telemetry, dashboard, sync), the live
 WebSocket endpoint, and the hourly CGWB sync scheduler.
 """
+# Configured with updated CORS origins for localhost and 127.0.0.1
 import logging
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from app.scheduler.jobs import shutdown_scheduler, start_scheduler, trigger_init
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("rwh.main")
 
+get_settings.cache_clear()
 settings = get_settings()
 
 app = FastAPI(
@@ -25,10 +27,19 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Support both local dev ports and production domain configuration
+allowed_origins = list(set(settings.cors_origins + [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]))
+
+is_wildcard = "*" in settings.cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"] if is_wildcard else allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app" if settings.environment == "production" else None,
+    allow_credentials=not is_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )

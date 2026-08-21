@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/sync", tags=["sync"])
 def recent_runs(source: str | None = None, db: Session = Depends(get_db)):
     sql = "SELECT * FROM sync_runs WHERE (:source IS NULL OR source = :source) ORDER BY started_at DESC LIMIT 50"
     rows = db.execute(text(sql), {"source": source}).mappings().all()
-    return [SyncRunOut(**row) for row in rows]
+    return [SyncRunOut.model_validate(row) for row in rows]
 
 
 @router.get("/health")
