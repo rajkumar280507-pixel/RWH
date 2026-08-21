@@ -10,13 +10,21 @@
  * can apply opacity modifiers (e.g. bg-sand/50) on top of them.
  *
  * `:root` (no class) holds the LIGHT palette. `.dark` on <html> overrides it
- * with the DARK palette. The app has been dark-only until now, so
- * src/main.jsx applies `.dark` synchronously before first paint whenever no
- * theme preference is stored yet — existing users keep seeing the same dark
- * shell, and the light palette only appears once someone actively toggles.
+ * with the DARK palette. As of Pass 2 the app is light-first (matching
+ * ArcGIS/Civil 3D/OpenFlows/Procore-style enterprise engineering tools) —
+ * src/main.jsx applies `.dark` synchronously before first paint only when a
+ * user has actually persisted a `dark` preference; everyone else (including
+ * first-time visitors) gets this `:root` light palette. Dark mode remains
+ * fully supported via the toggle, it's just no longer the default.
  */
 
 :root {
+  /* Legacy surface/panel tokens (background #F5F7FA, cards/topbar #FFFFFF
+     per the Pass 2 spec) — these back the `bg-surface`/`bg-panel` Tailwind
+     classes used throughout the app (see tailwind.config.js). */
+  --color-surface: 245 247 250; /* #F5F7FA */
+  --color-panel: 255 255 255; /* #FFFFFF */
+
   /* Engineering-domain palette (light) */
   --color-ground: 146 64 14; /* warm brown */
   --color-topsoil: 192 133 82; /* light brown */
@@ -25,6 +33,8 @@
   --color-gravel: 107 114 128; /* gray */
   --color-aggregate: 55 65 81; /* dark gray */
   --color-rock: 71 85 105; /* slate */
+  --color-weathered-rock: 161 98 7; /* rusty amber-brown — transitional soil/rock */
+  --color-fractured-rock: 30 41 59; /* dark slate — solid bedrock */
   --color-groundwater: 37 99 235; /* blue */
   --color-recharge-water: 8 145 178; /* cyan */
   --color-rainfall-light: 147 197 253;
@@ -37,13 +47,20 @@
   --color-success: 16 185 129; /* emerald */
   --color-info: 14 165 233; /* sky blue */
 
-  /* Glass-morphism (light) */
-  --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(15, 23, 42, 0.08);
+  /* Glass-morphism (light) — lighter/cleaner than the dark-mode variant so
+     floating panels (command palette, notifications) read as frosted white
+     glass rather than a dim overlay. */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(15, 23, 42, 0.06);
   --glass-blur: 16px;
 }
 
 .dark {
+  /* Legacy surface/panel tokens — unchanged from the original hardcoded
+     hex (#0b1220 / #111a2e) so dark mode looks pixel-identical to before. */
+  --color-surface: 11 18 32; /* #0b1220 */
+  --color-panel: 17 26 46; /* #111a2e */
+
   /* Engineering-domain palette (dark) */
   --color-ground: 180 83 9;
   --color-topsoil: 214 160 109;
@@ -52,6 +69,8 @@
   --color-gravel: 156 163 175;
   --color-aggregate: 75 85 99;
   --color-rock: 100 116 139;
+  --color-weathered-rock: 194 120 20;
+  --color-fractured-rock: 71 85 105;
   --color-groundwater: 96 165 250;
   --color-recharge-water: 34 211 238;
   --color-rainfall-light: 191 219 254;
@@ -74,6 +93,14 @@ html, body, #root {
   height: 100%;
 }
 
+/* Tailwind's @tailwind base (Preflight) doesn't apply the configured
+   `font-sans` stack to body automatically — it only makes the `font-sans`
+   utility available. Set it explicitly here so Inter/IBM Plex Sans is the
+   app-wide default without needing a `font-sans` class on every root node. */
+body {
+  font-family: "Inter", "IBM Plex Sans", system-ui, sans-serif;
+}
+
 /* Maps read better with a dark base regardless of app theme, so this stays
    a literal color rather than a token. */
 .leaflet-container {
@@ -88,4 +115,36 @@ html, body, #root {
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+/* CAD drafting sheet (EngineeringDrawings2D.jsx canvas only) — a real
+   engineering drawing is always plotted on white paper with black ink,
+   regardless of what theme the surrounding app UI is in (AutoCAD/Civil3D
+   output doesn't have a "dark mode"). Redefining the engineering-domain +
+   semantic color tokens here, scoped to `.cad-sheet`, makes every material
+   pattern and status color inside the canvas render at its light-mode value
+   even when an ancestor has `.dark` applied — CSS custom properties resolve
+   to the *nearest* definition, so this wins over the `.dark` block above
+   without needing a `.dark .cad-sheet` override. Structural/annotation ink
+   (dimension lines, leader lines, borders, text) is NOT a token — it's set
+   directly to a near-black hex in the component, matching "black dimensions"
+   drafting convention. */
+.cad-sheet {
+  --color-surface: 245 247 250;
+  --color-panel: 255 255 255;
+  --color-ground: 146 64 14;
+  --color-topsoil: 192 133 82;
+  --color-clay: 120 53 15;
+  --color-sand: 217 119 6;
+  --color-gravel: 107 114 128;
+  --color-aggregate: 55 65 81;
+  --color-rock: 71 85 105;
+  --color-weathered-rock: 161 98 7;
+  --color-fractured-rock: 30 41 59;
+  --color-groundwater: 37 99 235;
+  --color-recharge-water: 8 145 178;
+  --color-warning: 245 158 11;
+  --color-danger: 239 68 68;
+  --color-success: 16 185 129;
+  --color-info: 14 165 233;
 }

@@ -7,7 +7,7 @@ export default function Skeleton({ className = "" }) {
   return (
     <div
       aria-hidden="true"
-      className={`animate-pulse rounded-lg bg-slate-800/60 dark:bg-slate-800/60 ${className}`}
+      className={`animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800/60 ${className}`}
     />
   );
 }

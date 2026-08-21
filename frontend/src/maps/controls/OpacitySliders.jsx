@@ -14,8 +14,8 @@ export default function OpacitySliders({
   className = "",
 }) {
   return (
-    <div className={`glass-panel w-52 rounded-xl border border-slate-800/70 p-3 shadow-lg dark:border-slate-800/70 ${className}`}>
-      <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-200">
+    <div className={`glass-panel w-52 rounded-xl border border-slate-200 p-3 shadow-lg dark:border-slate-800/70 ${className}`}>
+      <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
         <SlidersHorizontal size={12} className="text-accent" />
         Layer opacity
       </div>
@@ -40,9 +40,9 @@ export default function OpacitySliders({
 function Slider({ label, value, onChange, disabled = false }) {
   return (
     <label className={`flex flex-col gap-1 text-[11px] ${disabled ? "opacity-40" : ""}`}>
-      <span className="flex items-center justify-between text-slate-400">
+      <span className="flex items-center justify-between text-slate-500 dark:text-slate-400">
         <span>{label}</span>
-        <span className="tabular-nums text-slate-500">{Math.round(value * 100)}%</span>
+        <span className="tabular-nums text-slate-500 dark:text-slate-500">{Math.round(value * 100)}%</span>
       </span>
       <input
         type="range"
@@ -52,7 +52,7 @@ function Slider({ label, value, onChange, disabled = false }) {
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-700 accent-teal-400 disabled:cursor-not-allowed"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-300 accent-teal-400 disabled:cursor-not-allowed dark:bg-slate-700"
       />
     </label>
   );

@@ -12,14 +12,14 @@ import { Inbox } from "lucide-react";
 export default function EmptyState({ icon, title, description, action, className = "" }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-800 bg-panel/20 px-6 py-10 text-center dark:border-slate-800 dark:bg-panel/20 ${className}`}
+      className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-panel/20 px-6 py-10 text-center dark:border-slate-800 dark:bg-panel/20 ${className}`}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800/60 text-slate-400">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
         {icon ?? <Inbox size={18} />}
       </div>
-      {title && <h3 className="text-sm font-semibold text-slate-200">{title}</h3>}
+      {title && <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>}
       {description && (
-        <p className="max-w-sm text-xs leading-relaxed text-slate-500">{description}</p>
+        <p className="max-w-sm text-xs leading-relaxed text-slate-500 dark:text-slate-400">{description}</p>
       )}
       {action && <div className="mt-2">{action}</div>}
     </div>

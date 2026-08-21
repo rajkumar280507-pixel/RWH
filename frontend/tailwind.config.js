@@ -14,13 +14,31 @@ export default {
   theme: {
     extend: {
       colors: {
+        // --- Brand tokens (Pass 2 — Engineering Blue) ---
+        // Fixed hex, not CSS-var-driven: these are the app's primary
+        // interactive color (buttons/active-nav/focus/links) and should
+        // stay constant across the light/dark toggle, matching the fixed
+        // dark-navy sidebar decision below.
+        brand: {
+          DEFAULT: "#2563EB",
+          dark: "#1D4ED8",
+          light: "#3B82F6",
+        },
+        brandCyan: "#06B6D4",
+
         // --- Legacy tokens (kept as-is; still referenced across the app) ---
+        // `DEFAULT` is now CSS-var-driven (see src/styles/index.css) so
+        // `bg-surface`/`bg-panel` actually respond to the light/dark toggle
+        // instead of always resolving to the old hardcoded dark hex — the
+        // `light` sub-keys below are kept for backward compatibility but
+        // were never referenced anywhere in the app (verified via grep), so
+        // this is the real fix for "does the background follow the theme".
         surface: {
-          DEFAULT: "#0b1220",
+          DEFAULT: withOpacity("--color-surface"),
           light: "#ffffff",
         },
         panel: {
-          DEFAULT: "#111a2e",
+          DEFAULT: withOpacity("--color-panel"),
           light: "#f4f6fb",
         },
         accent: {
@@ -52,6 +70,10 @@ export default {
       },
       backdropBlur: {
         glass: "16px",
+      },
+      fontFamily: {
+        sans: ["Inter", "IBM Plex Sans", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
     },
   },

@@ -17,11 +17,11 @@ export default function LayerManagerPanel({ filters, onChange, className = "" })
   const [open, setOpen] = useState(true);
 
   return (
-    <div className={`glass-panel w-56 rounded-xl border border-slate-800/70 shadow-lg dark:border-slate-800/70 ${className}`}>
+    <div className={`glass-panel w-56 rounded-xl border border-slate-200 shadow-lg dark:border-slate-800/70 ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-200"
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200"
       >
         <span className="flex items-center gap-1.5">
           <Layers size={12} className="text-accent" />
@@ -31,7 +31,7 @@ export default function LayerManagerPanel({ filters, onChange, className = "" })
       </button>
 
       {open && (
-        <div className="flex flex-col gap-2 border-t border-slate-800/70 px-3 py-2.5 dark:border-slate-800/70">
+        <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2.5 dark:border-slate-800/70">
           <Row
             label="Groundwater wells"
             dot="bg-accent"
@@ -57,10 +57,10 @@ export default function LayerManagerPanel({ filters, onChange, className = "" })
             disabled
             tooltip="Requires zone-boundary geometry that the API doesn't provide yet"
           />
-          <p className="mt-0.5 flex items-start gap-1 text-[10px] leading-snug text-slate-500">
+          <p className="mt-0.5 flex items-start gap-1 text-[10px] leading-snug text-slate-500 dark:text-slate-500">
             <Info size={11} className="mt-0.5 shrink-0" />
-            Basemap (dark / satellite / terrain) switches via the layers icon
-            in the top-right corner of the map.
+            Basemap (street / satellite / terrain / dark) switches via the
+            layers icon in the top-right corner of the map.
           </p>
         </div>
       )}
@@ -72,7 +72,7 @@ function Row({ label, dot, checked, onChange, disabled = false, tooltip }) {
   return (
     <label
       title={tooltip}
-      className={`flex cursor-pointer items-center justify-between gap-2 text-[11px] text-slate-300 ${
+      className={`flex cursor-pointer items-center justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300 ${
         disabled ? "cursor-not-allowed opacity-45" : ""
       }`}
     >

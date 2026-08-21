@@ -45,7 +45,7 @@ export default function ReportsPage() {
         detail.data && (
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-panel/60 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-accent/40 hover:text-accent print:hidden"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-panel/60 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:border-accent/40 hover:text-accent print:hidden"
             title="Lightweight browser print — for the full formatted PDF, use Generate PDF Report below"
           >
             <Printer size={13} /> Print / Save PDF
@@ -54,8 +54,8 @@ export default function ReportsPage() {
       }
     >
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="glass-panel rounded-xl border border-slate-800 bg-panel/50 p-4 print:hidden">
-          <h3 className="mb-2 text-sm font-semibold text-slate-200">
+        <div className="glass-panel rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-4 print:hidden">
+          <h3 className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
             Saved designs ({designs.data?.length ?? 0})
           </h3>
           {designs.isLoading && (
@@ -80,7 +80,7 @@ export default function ReportsPage() {
                 className={`group relative cursor-pointer rounded-lg border p-3 pr-8 text-xs transition ${
                   selectedId === d.id
                     ? "border-accent/50 bg-accent/10"
-                    : "border-slate-800 hover:bg-slate-800/50"
+                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                 }`}
               >
                 <button
@@ -101,7 +101,7 @@ export default function ReportsPage() {
                     <Trash2 size={12} />
                   )}
                 </button>
-                <div className="font-semibold text-slate-200">
+                <div className="font-semibold text-slate-800 dark:text-slate-200">
                   {d.building_name || `Design #${d.id}`}
                 </div>
                 <div className="text-slate-500">
@@ -186,14 +186,14 @@ function ReportGenerationPanel({ designId }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="glass-panel rounded-xl border border-slate-800 bg-panel/50 p-4 print:hidden"
+      className="glass-panel rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-4 print:hidden"
     >
-      <div className="mb-3 flex items-center gap-2 border-b border-slate-800 pb-2.5">
+      <div className="mb-3 flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 text-accent">
           <FileText size={15} />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-slate-100">PDF Engineering Report</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">PDF Engineering Report</h3>
           <p className="text-[10px] text-slate-500">
             Cover page, site &amp; hydrology, structure &amp; BOQ, construction sequence, maintenance
             schedule, decision-support notes, QR verification and a typed sign-off block.
@@ -202,7 +202,7 @@ function ReportGenerationPanel({ designId }) {
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <fieldset className="rounded-lg border border-slate-800 p-2.5">
+        <fieldset className="rounded-lg border border-slate-200 dark:border-slate-800 p-2.5">
           <legend className="px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
             Prepared by
           </legend>
@@ -211,17 +211,17 @@ function ReportGenerationPanel({ designId }) {
             placeholder="Name"
             value={preparedByName}
             onChange={(e) => setPreparedByName(e.target.value)}
-            className="mb-1.5 w-full rounded-md border border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
+            className="mb-1.5 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
           />
           <input
             type="text"
             placeholder="Designation"
             value={preparedByDesignation}
             onChange={(e) => setPreparedByDesignation(e.target.value)}
-            className="w-full rounded-md border border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
+            className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
           />
         </fieldset>
-        <fieldset className="rounded-lg border border-slate-800 p-2.5">
+        <fieldset className="rounded-lg border border-slate-200 dark:border-slate-800 p-2.5">
           <legend className="px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
             Reviewed by
           </legend>
@@ -230,14 +230,14 @@ function ReportGenerationPanel({ designId }) {
             placeholder="Name"
             value={reviewedByName}
             onChange={(e) => setReviewedByName(e.target.value)}
-            className="mb-1.5 w-full rounded-md border border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
+            className="mb-1.5 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
           />
           <input
             type="text"
             placeholder="Designation"
             value={reviewedByDesignation}
             onChange={(e) => setReviewedByDesignation(e.target.value)}
-            className="w-full rounded-md border border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
+            className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-surface/70 px-2 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-accent/50 focus:outline-none"
           />
         </fieldset>
       </div>
@@ -282,16 +282,16 @@ function ReportGenerationPanel({ designId }) {
       )}
 
       {existing && (
-        <div className="mt-4 flex items-center gap-3 border-t border-slate-800 pt-3">
+        <div className="mt-4 flex items-center gap-3 border-t border-slate-200 dark:border-slate-800 pt-3">
           {existing.qr_code_url && (
             <img
               src={resolveStaticUrl(existing.qr_code_url)}
               alt="Report verification QR code"
-              className="h-16 w-16 rounded border border-slate-700 bg-white p-1"
+              className="h-16 w-16 rounded border border-slate-300 dark:border-slate-700 bg-white p-1"
             />
           )}
-          <div className="text-[11px] text-slate-400">
-            <div className="flex items-center gap-1 font-semibold text-slate-300">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
               <QrCode size={12} /> Verification QR
             </div>
             <div>Last generated {new Date(existing.generated_at).toLocaleString()}</div>
@@ -310,9 +310,9 @@ function ReportDetail({ data }) {
   const boqTotal = (boq ?? []).reduce((s, i) => s + Number(i.amount_inr ?? 0), 0);
 
   return (
-    <div className="glass-panel space-y-4 rounded-xl border border-slate-800 bg-panel/50 p-5 print:border-none print:bg-white print:text-black">
-      <div className="border-b border-slate-800 pb-3">
-        <h2 className="text-base font-semibold text-slate-100 print:text-black">
+    <div className="glass-panel space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-5 print:border-none print:bg-white print:text-black">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 print:text-black">
           Rooftop Rainwater Harvesting Design Report
         </h2>
         <div className="text-xs text-slate-500">
@@ -417,9 +417,9 @@ function Grid({ children }) {
 
 function Field({ label, value }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-surface/60 p-2 print:border-gray-300 print:bg-white">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-surface/60 p-2 print:border-gray-300 print:bg-white">
       <div className="text-[10px] uppercase text-slate-500">{label}</div>
-      <div className="text-sm text-slate-100 print:text-black">{value}</div>
+      <div className="text-sm text-slate-900 dark:text-slate-100 print:text-black">{value}</div>
     </div>
   );
 }
@@ -436,7 +436,7 @@ function Table({ head, rows, footer }) {
       </thead>
       <tbody>
         {rows.map((r, i) => (
-          <tr key={i} className="border-t border-slate-800">
+          <tr key={i} className="border-t border-slate-200 dark:border-slate-800">
             {r.map((c, j) => (
               <td key={j} className="py-1">{c}</td>
             ))}
@@ -445,7 +445,7 @@ function Table({ head, rows, footer }) {
       </tbody>
       {footer && (
         <tfoot>
-          <tr className="border-t border-slate-700 font-semibold text-slate-200 print:text-black">
+          <tr className="border-t border-slate-300 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-200 print:text-black">
             {footer.map((c, i) => (
               <td key={i} className="py-2">{c}</td>
             ))}

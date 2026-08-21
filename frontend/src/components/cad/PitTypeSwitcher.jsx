@@ -93,7 +93,7 @@ export function defaultStructureView(result) {
 
 export default function PitTypeSwitcher({ result, value, onChange }) {
   return (
-    <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/80 p-1">
+    <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-1">
       {STRUCTURE_VIEWS.map((v) => {
         const isReal = v.real(result);
         const available = v.requires ? v.requires(result) : isReal;
@@ -108,23 +108,23 @@ export default function PitTypeSwitcher({ result, value, onChange }) {
             title={v.tooltip}
             className={`group relative flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${
               !available
-                ? "cursor-not-allowed text-slate-600"
+                ? "cursor-not-allowed text-slate-400 dark:text-slate-600"
                 : active
-                ? "text-accent"
-                : "text-slate-400 hover:text-slate-200"
+                ? "text-brand"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
             {active && available && (
               <motion.span
                 layoutId="pit-type-switcher-highlight"
-                className="absolute inset-0 rounded-md bg-accent/15 ring-1 ring-accent/30"
+                className="absolute inset-0 rounded-md bg-brand/10 ring-1 ring-brand/30"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.35 }}
               />
             )}
             <Icon size={12} className="relative z-10 shrink-0" />
             <span className="relative z-10 whitespace-nowrap">{v.label}</span>
             {!isReal && available && (
-              <Info size={10} className="relative z-10 shrink-0 text-slate-500" aria-label="Frontend-only visual variant" />
+              <Info size={10} className="relative z-10 shrink-0 text-slate-400 dark:text-slate-500" aria-label="Frontend-only visual variant" />
             )}
           </button>
         );

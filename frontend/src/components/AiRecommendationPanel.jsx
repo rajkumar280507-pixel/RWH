@@ -95,15 +95,15 @@ export default function AiRecommendationPanel({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="glass-panel flex flex-col rounded-xl border border-slate-800 bg-panel/70 p-4 dark:bg-panel/70"
+      className="glass-panel flex flex-col rounded-xl border border-slate-200 bg-panel/70 p-4 dark:border-slate-800 dark:bg-panel/70"
     >
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
             <Lightbulb size={15} />
           </span>
           <div>
-            <h3 className="text-sm font-semibold text-slate-100">Decision Support Recommendation</h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Decision Support Recommendation</h3>
             <p className="text-[10px] text-slate-500">Rule-based guidance from live telemetry — not AI/LLM generated</p>
           </div>
         </div>
@@ -122,10 +122,10 @@ export default function AiRecommendationPanel({
         </div>
       ) : (
         <>
-          <p className="mb-2 text-xs leading-relaxed text-slate-300">{rec.headline}</p>
+          <p className="mb-2 text-xs leading-relaxed text-slate-700 dark:text-slate-300">{rec.headline}</p>
           <ul className="flex flex-col gap-1.5">
             {rec.reasons.map((reason) => (
-              <li key={reason} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-400">
+              <li key={reason} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                 <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
                 {reason}
               </li>

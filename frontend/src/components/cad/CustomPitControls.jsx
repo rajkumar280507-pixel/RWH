@@ -13,7 +13,7 @@ const n = (v, d = 2) => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v
 function Field({ label, unit, value, limits, onChange }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-500">
         {label} ({unit})
       </span>
       <input
@@ -23,7 +23,7 @@ function Field({ label, unit, value, limits, onChange }) {
         max={limits.max}
         step={limits.step}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100 outline-none focus:border-accent"
+        className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-brand"
       />
     </label>
   );
@@ -43,15 +43,15 @@ export default function CustomPitControls({ pit, onChange, filterStack, compact 
   const quantities = computeCustomPitQuantities(pit, filterStack);
 
   return (
-    <div className={`flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-900/60 p-3 ${compact ? "text-[11px]" : "text-xs"}`}>
+    <div className={`flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3 ${compact ? "text-[11px]" : "text-xs"}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold text-slate-200">Custom Pit Sketch</span>
-        <div className="flex gap-1 rounded-md border border-slate-700 bg-slate-950 p-0.5">
+        <span className="font-semibold text-slate-800 dark:text-slate-200">Custom Pit Sketch</span>
+        <div className="flex gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-0.5">
           <button
             type="button"
             onClick={() => setShape("circular")}
             className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] transition ${
-              pit.shape === "circular" ? "bg-accent/20 text-accent" : "text-slate-400 hover:text-slate-200"
+              pit.shape === "circular" ? "bg-brand/10 text-brand" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
             <Circle size={11} /> Circular
@@ -60,7 +60,7 @@ export default function CustomPitControls({ pit, onChange, filterStack, compact 
             type="button"
             onClick={() => setShape("rectangular")}
             className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] transition ${
-              pit.shape === "rectangular" ? "bg-accent/20 text-accent" : "text-slate-400 hover:text-slate-200"
+              pit.shape === "rectangular" ? "bg-brand/10 text-brand" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
             <RectangleHorizontal size={11} /> Rectangular
@@ -81,14 +81,14 @@ export default function CustomPitControls({ pit, onChange, filterStack, compact 
         <Field label="Freeboard" unit="m" value={pit.freeboardM} limits={CUSTOM_PIT_LIMITS.freeboardM} onChange={setField("freeboardM")} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-800 pt-2 text-slate-400">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200 dark:border-slate-800 pt-2 text-slate-600 dark:text-slate-400">
         <span>
-          Footprint: <b className="text-slate-200">{n(quantities.footprintAreaM2)} m²</b>
+          Footprint: <b className="text-slate-800 dark:text-slate-200">{n(quantities.footprintAreaM2)} m²</b>
         </span>
         <span>
-          Excavation: <b className="text-slate-200">{n(quantities.excavationVolumeM3)} m³</b>
+          Excavation: <b className="text-slate-800 dark:text-slate-200">{n(quantities.excavationVolumeM3)} m³</b>
         </span>
-        <span className="text-[10px] italic text-slate-500">Indicative geometry only — not an engineered design or BOQ.</span>
+        <span className="text-[10px] italic text-slate-500 dark:text-slate-500">Indicative geometry only — not an engineered design or BOQ.</span>
       </div>
     </div>
   );

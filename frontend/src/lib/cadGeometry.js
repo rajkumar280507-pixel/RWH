@@ -172,6 +172,41 @@ export function leaderLine(fromPoint, toPoint, label, color = "rgb(var(--color-s
 }
 
 /**
+ * A short flow-direction arrow: a plain line with an arrowhead at `toPoint`
+ * and no extension lines or measurement label (unlike dimensionLine/
+ * leaderLine) — used purely to show "water moves this way", e.g. rainwater
+ * travelling down through a filter stack toward the groundwater. An optional
+ * `label` can be supplied for a one-off callout (e.g. "RAIN IN").
+ */
+export function flowArrow(fromPoint, toPoint, { color = "rgb(var(--color-recharge-water))", strokeWidth = 2.25, label, labelAnchor = "middle" } = {}) {
+  const shapes = [
+    {
+      type: "line",
+      x1: fromPoint.x,
+      y1: fromPoint.y,
+      x2: toPoint.x,
+      y2: toPoint.y,
+      stroke: color,
+      strokeWidth,
+      markerEnd: "url(#cad-arrow-flow)",
+    },
+  ];
+  if (label) {
+    shapes.push({
+      type: "text",
+      x: (fromPoint.x + toPoint.x) / 2 + (labelAnchor === "middle" ? 0 : 8),
+      y: (fromPoint.y + toPoint.y) / 2,
+      text: label,
+      anchor: labelAnchor,
+      size: 8.5,
+      weight: 600,
+      fill: color,
+    });
+  }
+  return { shapes };
+}
+
+/**
  * A simple north-arrow symbol: a filled triangle over an "N" label, centred
  * on `centerPoint`, `size` px tall.
  */
@@ -209,7 +244,7 @@ export function titleBlock({
   y = 0,
   width = 260,
   height = 64,
-  projectName = "RTRWH RECHARGE SYSTEM",
+  projectName = "RTRWH System",
   drawingTitle = "",
   scale = "",
   date = "",
@@ -220,8 +255,23 @@ export function titleBlock({
   const rowY = y + titleRowH;
   const rowH = height - titleRowH;
 
+  // Long drawing titles (e.g. "CROSS SECTION A-A — RECHARGE TRENCH — 0.90m
+  // W × 12.0m L") can easily exceed a fixed-width title block, so the title
+  // row's font size shrinks to fit rather than overflowing the box/sheet —
+  // roughly 0.6 * fontSize px per character at this weight/family.
+  const titleText = drawingTitle.toUpperCase();
+  const titleAvailPx = width - 16;
+  const titleSize = Math.max(6.5, Math.min(10.5, titleAvailPx / Math.max(1, titleText.length * 0.62)));
+  // Small cell font too, kept small and constant since cell content (date/
+  // scale/drawn-by) is fairly short and predictable in practice.
+  const cellSize = 7.5;
+
   const shapes = [
-    { type: "rect", x, y, width, height, fill: "rgba(15,23,42,0.55)", stroke: "currentColor", strokeWidth: 1 },
+    // Light, near-white panel fill so the title block reads as a bordered
+    // box on a white drafting sheet (this drawing sheet is always white
+    // paper, independent of the app's own light/dark theme) rather than the
+    // dark translucent panel the box used before that pass.
+    { type: "rect", x, y, width, height, fill: "rgba(255,255,255,0.92)", stroke: "currentColor", strokeWidth: 1 },
     { type: "line", x1: x, y1: rowY, x2: x + width, y2: rowY, stroke: "currentColor", strokeWidth: 0.75, opacity: 0.6 },
     { type: "line", x1: x + colW, y1: rowY, x2: x + colW, y2: y + height, stroke: "currentColor", strokeWidth: 0.75, opacity: 0.6 },
     { type: "line", x1: x, y1: rowY + rowH / 2, x2: x + width, y2: rowY + rowH / 2, stroke: "currentColor", strokeWidth: 0.75, opacity: 0.6 },
@@ -229,16 +279,16 @@ export function titleBlock({
       type: "text",
       x: x + width / 2,
       y: y + titleRowH / 2 + 4,
-      text: drawingTitle.toUpperCase(),
+      text: titleText,
       anchor: "middle",
-      size: 10.5,
+      size: titleSize,
       weight: 700,
       fill: "currentColor",
     },
-    { type: "text", x: x + 8, y: rowY + rowH / 4 + 3, text: `PROJECT: ${projectName}`, anchor: "start", size: 8.5, fill: "currentColor" },
-    { type: "text", x: x + colW + 8, y: rowY + rowH / 4 + 3, text: `SCALE: ${scale}`, anchor: "start", size: 8.5, fill: "currentColor" },
-    { type: "text", x: x + 8, y: rowY + (rowH * 3) / 4 + 3, text: `DATE: ${date}`, anchor: "start", size: 8.5, fill: "currentColor" },
-    { type: "text", x: x + colW + 8, y: rowY + (rowH * 3) / 4 + 3, text: `DRAWN: ${drawnBy}`, anchor: "start", size: 8.5, fill: "currentColor" },
+    { type: "text", x: x + 8, y: rowY + rowH / 4 + 3, text: `PROJECT: ${projectName}`, anchor: "start", size: cellSize, fill: "currentColor" },
+    { type: "text", x: x + colW + 8, y: rowY + rowH / 4 + 3, text: `SCALE: ${scale}`, anchor: "start", size: cellSize, fill: "currentColor" },
+    { type: "text", x: x + 8, y: rowY + (rowH * 3) / 4 + 3, text: `DATE: ${date}`, anchor: "start", size: cellSize, fill: "currentColor" },
+    { type: "text", x: x + colW + 8, y: rowY + (rowH * 3) / 4 + 3, text: `DRAWN: ${drawnBy}`, anchor: "start", size: cellSize, fill: "currentColor" },
   ];
 
   return { shapes, width, height };

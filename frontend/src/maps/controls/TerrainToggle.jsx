@@ -18,13 +18,13 @@ export default function TerrainToggle({ active, onToggle, className = "" }) {
       className={`glass-panel flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-medium shadow-lg transition ${
         active
           ? "border-accent/50 bg-accent/15 text-accent"
-          : "border-slate-800/70 text-slate-300 hover:text-slate-100 dark:border-slate-800/70"
+          : "border-slate-200 text-slate-700 hover:text-slate-900 dark:border-slate-800/70 dark:text-slate-300 dark:hover:text-slate-100"
       } ${className}`}
     >
       <Mountain size={13} />
       <span className="flex flex-col items-start leading-tight">
         <span>Hillshade relief</span>
-        <span className="text-[9px] font-normal text-slate-500">2D shading, not 3D terrain</span>
+        <span className="text-[9px] font-normal text-slate-500 dark:text-slate-500">2D shading, not 3D terrain</span>
       </span>
     </button>
   );

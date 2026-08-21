@@ -38,10 +38,10 @@ export default function DesignResults({ result }) {
   if (!result) {
     return (
       <EmptyState
-        icon={<PenLine size={18} />}
-        title="No design yet"
-        description="Draw a rooftop and submit the form to generate the design."
-        className="h-64"
+        icon={<PenLine size={20} />}
+        title="Your design will appear here"
+        description="Fill in the rooftop catchment and design inputs on the left, then submit — the engineering-grade design (2D CAD drawings, 3D model, hydraulics, BOQ, and construction guide) populates this panel once generated."
+        className="min-h-[480px]"
       />
     );
   }
@@ -73,13 +73,15 @@ export default function DesignResults({ result }) {
         </div>
       )}
 
-      <div className="glass-panel flex gap-1 overflow-x-auto rounded-lg border border-slate-800 p-1 print:hidden">
+      <div className="glass-panel flex gap-1 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 p-1 print:hidden">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 py-2 text-xs font-medium transition ${
-              tab === t.id ? "text-accent" : "text-slate-400 hover:text-slate-200"
+              tab === t.id
+                ? "text-accent"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
             {tab === t.id && (
@@ -176,7 +178,7 @@ function StructureTab({ r }) {
             <Metric label="Trigger" value={r.injection_borewell.trigger_reason} />
             <Metric label="Conceptual depth" value={n(r.injection_borewell.conceptual_depth_m, 1)} unit="m" />
           </MetricGrid>
-          <div className="mt-3 space-y-1.5 text-[11px] text-slate-400">
+          <div className="mt-3 space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
             <div>• {r.injection_borewell.casing_zone_note}</div>
             <div>• {r.injection_borewell.gravel_pack_note}</div>
           </div>
@@ -201,7 +203,7 @@ function StructureTab({ r }) {
             n(l.hydraulic_conductivity_mm_hr, 0),
           ])}
         />
-        <p className="mt-2 text-[10px] text-slate-500">
+        <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
           Layers listed top to bottom. Coarsest material sits at the base to maintain infiltration
           capacity; the sand layer at top does the filtering and is the serviceable element.
         </p>
@@ -236,7 +238,7 @@ function HydraulicsTab({ r }) {
           <Metric label="Time to empty when full" value={n(r.time_to_empty_hr, 1)} unit="hours" highlight />
           <Metric label="Expected water-table rise" value={n(r.expected_gw_rise_m, 3)} unit="m/yr" />
         </MetricGrid>
-        <p className="mt-2 text-[10px] text-slate-500">
+        <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
           The structure must fully drain between storm events to be available for the next one. An
           emptying time beyond roughly 48 hours indicates the base area should be increased or the
           soil's infiltration capacity re-verified by a field percolation test.
@@ -249,14 +251,14 @@ function HydraulicsTab({ r }) {
 function CalculationSheet({ rows }) {
   return (
     <Panel title="Design Calculation Sheet">
-      <p className="mb-3 text-[11px] text-slate-500">
+      <p className="mb-3 text-[11px] text-slate-500 dark:text-slate-400">
         Every governing formula with the values substituted into it, in design sequence — the working
         a reviewing engineer would check.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
-          <thead className="text-slate-400">
-            <tr className="border-b border-slate-700 text-left">
+          <thead className="text-slate-500 dark:text-slate-400">
+            <tr className="border-b border-slate-300 dark:border-slate-700 text-left">
               <th className="w-8 py-2">#</th>
               <th className="py-2">Quantity</th>
               <th className="py-2">Formula</th>
@@ -267,15 +269,15 @@ function CalculationSheet({ rows }) {
           </thead>
           <tbody>
             {rows.map((s, i) => (
-              <tr key={i} className="border-b border-slate-800/70 align-top hover:bg-slate-800/30">
-                <td className="py-2 text-slate-500">{s.step}</td>
-                <td className="py-2 font-medium text-slate-200">{s.quantity}</td>
+              <tr key={i} className="border-b border-slate-200/70 align-top hover:bg-slate-100 dark:border-slate-800/70 dark:hover:bg-slate-800/30">
+                <td className="py-2 text-slate-500 dark:text-slate-400">{s.step}</td>
+                <td className="py-2 font-medium text-slate-900 dark:text-slate-100">{s.quantity}</td>
                 <td className="py-2 font-mono text-[10px] text-accent">{s.formula}</td>
-                <td className="py-2 font-mono text-[10px] text-slate-400">{s.substitution}</td>
-                <td className="py-2 text-right font-semibold text-slate-100">
-                  {s.result} <span className="font-normal text-slate-500">{s.unit}</span>
+                <td className="py-2 font-mono text-[10px] text-slate-500 dark:text-slate-400">{s.substitution}</td>
+                <td className="py-2 text-right font-semibold text-slate-900 dark:text-slate-100">
+                  {s.result} <span className="font-normal text-slate-500 dark:text-slate-400">{s.unit}</span>
                 </td>
-                <td className="py-2 text-[10px] text-slate-500">{s.reference}</td>
+                <td className="py-2 text-[10px] text-slate-500 dark:text-slate-400">{s.reference}</td>
               </tr>
             ))}
           </tbody>
@@ -300,7 +302,7 @@ function BoqTab({ r }) {
         footer={["Total (indicative)", "", "", "", `₹${Number(r.estimated_cost_inr).toLocaleString("en-IN")}`]}
         alignRight={[2, 3, 4]}
       />
-      <p className="mt-3 rounded-lg border border-slate-700 bg-surface/60 p-2.5 text-[10px] text-slate-400">
+      <p className="mt-3 rounded-lg border border-slate-300 bg-surface/60 p-2.5 text-[10px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
         Rates are illustrative placeholders. Substitute the current state PWD / CPWD Schedule of Rates
         before this figure is used for a tender or budget submission. Quantities exclude contingency,
         labour escalation, and GST.
@@ -312,10 +314,10 @@ function BoqTab({ r }) {
 /* ---------- shared presentational pieces ---------- */
 
 function Panel({ title, tone = "accent", children }) {
-  const border = tone === "danger" ? "border-danger/30" : "border-slate-800";
+  const border = tone === "danger" ? "border-danger/30" : "border-slate-200 dark:border-slate-800";
   return (
     <section className={`glass-panel rounded-xl border ${border} bg-panel/50 p-4`}>
-      <h3 className="mb-3 text-sm font-semibold text-slate-200">{title}</h3>
+      <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
       {children}
     </section>
   );
@@ -329,13 +331,13 @@ function Metric({ label, value, unit, highlight = false }) {
   return (
     <div
       className={`rounded-lg border p-2.5 ${
-        highlight ? "border-accent/30 bg-accent/5" : "border-slate-800 bg-surface/50"
+        highlight ? "border-accent/30 bg-accent/5" : "border-slate-200 bg-surface/50 dark:border-slate-800"
       }`}
     >
-      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-0.5 text-sm font-semibold text-slate-100">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
         {value}
-        {unit && <span className="ml-1 text-[10px] font-normal text-slate-500">{unit}</span>}
+        {unit && <span className="ml-1 text-[10px] font-normal text-slate-500 dark:text-slate-400">{unit}</span>}
       </div>
     </div>
   );
@@ -345,8 +347,8 @@ function DataTable({ head, rows, footer, alignRight = [] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-[11px]">
-        <thead className="text-slate-400">
-          <tr className="border-b border-slate-700 text-left">
+        <thead className="text-slate-500 dark:text-slate-400">
+          <tr className="border-b border-slate-300 dark:border-slate-700 text-left">
             {head.map((h, i) => (
               <th key={h} className={`py-2 ${alignRight.includes(i) ? "text-right" : ""}`}>{h}</th>
             ))}
@@ -354,7 +356,7 @@ function DataTable({ head, rows, footer, alignRight = [] }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-b border-slate-800/70 hover:bg-slate-800/30">
+            <tr key={i} className="border-b border-slate-200/70 hover:bg-slate-100 dark:border-slate-800/70 dark:hover:bg-slate-800/30">
               {r.map((c, j) => (
                 <td key={j} className={`py-2 ${alignRight.includes(j) ? "text-right" : ""}`}>{c}</td>
               ))}
@@ -363,7 +365,7 @@ function DataTable({ head, rows, footer, alignRight = [] }) {
         </tbody>
         {footer && (
           <tfoot>
-            <tr className="border-t border-slate-700 font-semibold text-slate-100">
+            <tr className="border-t border-slate-300 font-semibold text-slate-900 dark:border-slate-700 dark:text-slate-100">
               {footer.map((c, i) => (
                 <td key={i} className={`py-2.5 ${alignRight.includes(i) ? "text-right" : ""}`}>{c}</td>
               ))}
@@ -378,10 +380,10 @@ function DataTable({ head, rows, footer, alignRight = [] }) {
 function DataSourceBanner({ label, source, value }) {
   const live = source?.used;
   return (
-    <div className="glass-panel flex items-center justify-between rounded-xl border border-slate-800 bg-panel/40 px-4 py-3 text-xs">
+    <div className="glass-panel flex items-center justify-between rounded-xl border border-slate-200 bg-panel/40 px-4 py-3 text-xs dark:border-slate-800">
       <div>
-        <div className="font-semibold text-slate-200">{label}</div>
-        <div className="text-[11px] text-slate-400">
+        <div className="font-semibold text-slate-900 dark:text-slate-100">{label}</div>
+        <div className="text-[11px] text-slate-500 dark:text-slate-400">
           {live ? (
             <span className="flex items-center gap-1 font-medium text-success">
               <Satellite size={11} className="shrink-0" />
@@ -392,7 +394,7 @@ function DataSourceBanner({ label, source, value }) {
           )}
         </div>
       </div>
-      <div className="text-right font-bold text-slate-100">{value}</div>
+      <div className="text-right font-bold text-slate-900 dark:text-slate-100">{value}</div>
     </div>
   );
 }
@@ -401,24 +403,24 @@ function ConstructionGuideTab({ r }) {
   return (
     <div className="flex flex-col gap-4 text-xs">
       <Panel title="Step-by-Step Construction Procedure">
-        <ol className="flex flex-col gap-2 text-slate-300 list-decimal pl-4">
+        <ol className="flex flex-col gap-2 text-slate-700 dark:text-slate-300 list-decimal pl-4">
           <li>
-            <strong className="text-slate-100">Site Excavation:</strong> Excavate to specified depth ({n(r.pit?.depth_m || r.trench?.depth_m || 2.5)}m) maintaining 1:0.5 safe side slopes. Keep at least 3.0m clearance above seasonal high groundwater table.
+            <strong className="text-slate-900 dark:text-slate-100">Site Excavation:</strong> Excavate to specified depth ({n(r.pit?.depth_m || r.trench?.depth_m || 2.5)}m) maintaining 1:0.5 safe side slopes. Keep at least 3.0m clearance above seasonal high groundwater table.
           </li>
           <li>
-            <strong className="text-slate-100">Bottom Preparation & Deep Bore (if applicable):</strong> Level bottom. If deep injection bore is recommended, drill 150mm Ø borewell, insert slotted PVC casing with 3mm slots, and pack with 2-5mm pea gravel around casing.
+            <strong className="text-slate-900 dark:text-slate-100">Bottom Preparation & Deep Bore (if applicable):</strong> Level bottom. If deep injection bore is recommended, drill 150mm Ø borewell, insert slotted PVC casing with 3mm slots, and pack with 2-5mm pea gravel around casing.
           </li>
           <li>
-            <strong className="text-slate-100">Filter Layer 3 Placement (Bottom 50%):</strong> Lay coarse boulders/aggregates (50–200 mm particle size) to a depth of {n((r.pit?.depth_m || 2.5) * 0.5)}m.
+            <strong className="text-slate-900 dark:text-slate-100">Filter Layer 3 Placement (Bottom 50%):</strong> Lay coarse boulders/aggregates (50–200 mm particle size) to a depth of {n((r.pit?.depth_m || 2.5) * 0.5)}m.
           </li>
           <li>
-            <strong className="text-slate-100">Filter Layer 2 Placement (Middle 25%):</strong> Lay graded gravel (5–10 mm particle size) to a depth of {n((r.pit?.depth_m || 2.5) * 0.25)}m.
+            <strong className="text-slate-900 dark:text-slate-100">Filter Layer 2 Placement (Middle 25%):</strong> Lay graded gravel (5–10 mm particle size) to a depth of {n((r.pit?.depth_m || 2.5) * 0.25)}m.
           </li>
           <li>
-            <strong className="text-slate-100">Filter Layer 1 Placement (Top 25%):</strong> Lay coarse river sand (1.5–2.0 mm particle size) to a depth of {n((r.pit?.depth_m || 2.5) * 0.25)}m.
+            <strong className="text-slate-900 dark:text-slate-100">Filter Layer 1 Placement (Top 25%):</strong> Lay coarse river sand (1.5–2.0 mm particle size) to a depth of {n((r.pit?.depth_m || 2.5) * 0.25)}m.
           </li>
           <li>
-            <strong className="text-slate-100">First Flush & Silt Trap Chamber:</strong> Construct 230mm brickwork Inspection Chamber (600×600mm) with 0.5mm first-flush bypass valve before pit inlet.
+            <strong className="text-slate-900 dark:text-slate-100">First Flush & Silt Trap Chamber:</strong> Construct 230mm brickwork Inspection Chamber (600×600mm) with 0.5mm first-flush bypass valve before pit inlet.
           </li>
         </ol>
       </Panel>

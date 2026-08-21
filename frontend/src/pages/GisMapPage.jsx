@@ -13,6 +13,7 @@ import MeasureTool from "../maps/controls/MeasureTool.jsx";
 import SearchControl from "../maps/controls/SearchControl.jsx";
 import OpacitySliders from "../maps/controls/OpacitySliders.jsx";
 import TerrainToggle from "../maps/controls/TerrainToggle.jsx";
+import LocateControl from "../maps/controls/LocateControl.jsx";
 import {
   getGwHistory,
   getLatestGroundwater,
@@ -118,7 +119,7 @@ export default function GisMapPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-        <div className="relative overflow-hidden rounded-xl border border-slate-800 xl:col-span-3" style={{ height: 620 }}>
+        <div className="relative h-[75vh] max-h-[900px] min-h-[460px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 xl:col-span-3">
           <GisMap
             groundwater={groundwater.data ?? []}
             rainfall={rainfall.data ?? []}
@@ -166,6 +167,7 @@ export default function GisMapPage() {
               </div>
               <div className="pointer-events-auto flex flex-col items-end gap-2">
                 <MeasureTool map={map} />
+                <LocateControl map={map} />
                 <MiniMap map={map} />
               </div>
             </div>
@@ -178,9 +180,9 @@ export default function GisMapPage() {
             (groundwater.data?.length ?? 0) === 0 &&
             (rainfall.data?.length ?? 0) === 0 && (
               <div className="pointer-events-none absolute inset-0 z-[950] flex items-center justify-center">
-                <div className="glass-panel pointer-events-auto rounded-xl border border-slate-700 px-5 py-4 text-center shadow-lg dark:border-slate-700">
-                  <div className="text-sm font-semibold text-slate-200">No stations match these filters</div>
-                  <p className="mt-1 max-w-xs text-xs text-slate-500">
+                <div className="glass-panel pointer-events-auto rounded-xl border border-slate-300 px-5 py-4 text-center shadow-lg dark:border-slate-700">
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">No stations match these filters</div>
+                  <p className="mt-1 max-w-xs text-xs text-slate-500 dark:text-slate-400">
                     Try widening the data-freshness window or clearing the state/district/taluk filters.
                   </p>
                   <button
@@ -196,8 +198,8 @@ export default function GisMapPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="glass-panel rounded-xl border border-slate-800/70 p-4 text-xs dark:border-slate-800/70">
-            <div className="mb-2 text-sm font-semibold text-slate-200">Visible stations</div>
+          <div className="glass-panel rounded-xl border border-slate-200 p-4 text-xs dark:border-slate-800/70">
+            <div className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">Visible stations</div>
             <Row label="Groundwater" value={filters.showGroundwater ? groundwater.data?.length ?? 0 : "hidden"} />
             <Row label="Rainfall" value={filters.showRainfall ? rainfall.data?.length ?? 0 : "hidden"} />
             {(groundwater.isFetching || rainfall.isFetching) && (
@@ -205,17 +207,17 @@ export default function GisMapPage() {
             )}
           </div>
 
-          <div className="glass-panel flex-1 rounded-xl border border-slate-800/70 p-4 dark:border-slate-800/70">
+          <div className="glass-panel flex-1 rounded-xl border border-slate-200 p-4 dark:border-slate-800/70">
             {selected ? (
               <>
-                <div className="text-sm font-semibold text-slate-200">
+                <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                   {selected.station_name || selected.station_code}
                 </div>
-                <div className="mb-2 text-[11px] text-slate-500">
+                <div className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">
                   {selected.district} · {selected.kind} · last reading {ageLabel(selected.age_hours)}
                 </div>
                 {history.isLoading ? (
-                  <div className="text-xs text-slate-500">Loading history…</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Loading history…</div>
                 ) : chartSeries[0]?.data.length ? (
                   <TimeSeriesChart
                     series={chartSeries}
@@ -223,11 +225,11 @@ export default function GisMapPage() {
                     height={220}
                   />
                 ) : (
-                  <div className="text-xs text-slate-500">No readings in the last year.</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">No readings in the last year.</div>
                 )}
               </>
             ) : (
-              <div className="text-xs text-slate-500">Click a station on the map to see its history.</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">Click a station on the map to see its history.</div>
             )}
           </div>
         </div>
@@ -239,8 +241,8 @@ export default function GisMapPage() {
 function Row({ label, value }) {
   return (
     <div className="flex justify-between py-0.5">
-      <span className="text-slate-400">{label}</span>
-      <span className="text-slate-200">{value}</span>
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="text-slate-800 dark:text-slate-200">{value}</span>
     </div>
   );
 }

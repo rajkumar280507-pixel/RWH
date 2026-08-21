@@ -15,7 +15,7 @@
  *   </svg>
  */
 
-const PATTERN_IDS = {
+export const PATTERN_IDS = {
   sand: "pattern-sand",
   gravel: "pattern-gravel",
   aggregate: "pattern-aggregate",
@@ -23,6 +23,14 @@ const PATTERN_IDS = {
   clay: "pattern-clay",
   water: "pattern-water",
   concrete: "pattern-concrete",
+  // Soil-stratigraphy-only patterns (Phase E) — not backend material names,
+  // referenced directly by id from the cross-section's illustrative soil
+  // column rather than through resolveMaterialKey()'s text matching, though
+  // matching is still wired up below so the same click-for-spec popup works
+  // if these labels are ever used elsewhere.
+  topsoil: "pattern-topsoil",
+  weatheredRock: "pattern-weathered-rock",
+  fracturedRock: "pattern-fractured-rock",
 };
 
 // Backend material strings (see FILTER_MEDIA_STACK in
@@ -30,13 +38,16 @@ const PATTERN_IDS = {
 // "Coarse aggregate / boulders") plus a few extra synonyms so this keeps
 // working if the engine's wording drifts slightly. Matched case-insensitively.
 const MATERIAL_KEYWORDS = [
+  [/top\s*soil/i, "topsoil"],
+  [/weathered rock/i, "weatheredRock"],
+  [/fractured rock/i, "fracturedRock"],
   [/sand/i, "sand"],
   [/gravel/i, "gravel"],
   [/aggregate|boulder/i, "aggregate"],
   [/rock|stone|hardcore/i, "rock"],
   [/clay/i, "clay"],
   [/water/i, "water"],
-  [/concrete|rcc|brick|masonry/i, "concrete"],
+  [/concrete|rcc|brick|masonry|footing|collar/i, "concrete"],
 ];
 
 /**
@@ -141,6 +152,39 @@ export default function MaterialPatternDefs() {
       <pattern id={PATTERN_IDS.concrete} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
         <rect width="8" height="8" fill="rgb(var(--color-ground) / 0.10)" />
         <line x1="0" y1="0" x2="0" y2="8" stroke="rgb(var(--color-ground))" strokeWidth="1.4" />
+      </pattern>
+
+      {/* TOPSOIL — loose organic flecks + short dashes (looser/darker read
+          than clean sand, distinct from clay's even horizontal hatch) */}
+      <pattern id={PATTERN_IDS.topsoil} width="10" height="10" patternUnits="userSpaceOnUse">
+        <rect width="10" height="10" fill="rgb(var(--color-topsoil) / 0.20)" />
+        <circle cx="2" cy="2" r="0.8" fill="rgb(var(--color-topsoil))" />
+        <circle cx="7" cy="4.5" r="0.6" fill="rgb(var(--color-topsoil))" />
+        <line x1="1" y1="7.5" x2="4" y2="7" stroke="rgb(var(--color-topsoil))" strokeWidth="0.9" />
+        <line x1="6" y1="8.8" x2="9.2" y2="8.4" stroke="rgb(var(--color-topsoil))" strokeWidth="0.9" />
+      </pattern>
+
+      {/* WEATHERED ROCK — loose, rounded-edge broken blocks (softer/lighter
+          than fractured rock below — this is partly-decomposed rock, not yet
+          solid) */}
+      <pattern id={PATTERN_IDS.weatheredRock} width="24" height="24" patternUnits="userSpaceOnUse">
+        <rect width="24" height="24" fill="rgb(var(--color-weathered-rock) / 0.16)" />
+        <path d="M2 3 L9 2 L11 9 L4 11 Z" fill="rgb(var(--color-weathered-rock) / 0.35)" stroke="rgb(var(--color-weathered-rock))" strokeWidth="1" />
+        <path d="M14 4 L21 6 L19 13 L13 11 Z" fill="rgb(var(--color-weathered-rock) / 0.35)" stroke="rgb(var(--color-weathered-rock))" strokeWidth="1" />
+        <path d="M4 15 L12 14 L13 21 L5 22 Z" fill="rgb(var(--color-weathered-rock) / 0.35)" stroke="rgb(var(--color-weathered-rock))" strokeWidth="1" />
+        <path d="M16 16 L23 15 L22 23 L15 23 Z" fill="rgb(var(--color-weathered-rock) / 0.35)" stroke="rgb(var(--color-weathered-rock))" strokeWidth="1" />
+      </pattern>
+
+      {/* FRACTURED ROCK — dense angular crack network on a darker fill (solid
+          bedrock, cut through by fractures — the deepest/hardest stratum) */}
+      <pattern id={PATTERN_IDS.fracturedRock} width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect width="20" height="20" fill="rgb(var(--color-fractured-rock) / 0.28)" />
+        <path
+          d="M0 5 L6 3 L10 7 L6 11 L0 9 Z M10 7 L16 4 L20 8 M6 11 L9 17 L4 20 M10 7 L14 13 L20 15"
+          fill="none"
+          stroke="rgb(var(--color-fractured-rock))"
+          strokeWidth="1.1"
+        />
       </pattern>
     </>
   );

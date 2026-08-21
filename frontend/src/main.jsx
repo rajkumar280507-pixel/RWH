@@ -4,21 +4,28 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.jsx";
 import "./styles/index.css";
 
-// Apply the persisted theme (or the dark default) to <html> synchronously,
+// Apply the persisted theme (or the light default) to <html> synchronously,
 // before React ever renders, so there's no flash of the wrong theme. This
 // reads the same localStorage key that src/store/uiStore.js's zustand
 // `persist` middleware writes to (JSON-shaped: {state:{theme}, version}) —
 // keep the two in sync if the key or shape ever changes.
+//
+// Pass 2: default flipped from "dark" to "light" (light-first, matching
+// enterprise engineering-software comparables — see the redesign plan).
+// Existing users with an explicit persisted preference are unaffected;
+// this only changes the fallback for no-preference/first-time visitors.
+// uiStore.js's own `theme` initial state must stay in sync with this
+// fallback, or zustand's rehydration will re-flip the class post-mount.
 const THEME_STORAGE_KEY = "rwh-ui-theme";
 function readPersistedTheme() {
   try {
     const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (!raw) return "dark";
+    if (!raw) return "light";
     const parsed = JSON.parse(raw);
     const theme = parsed?.state?.theme;
-    return theme === "light" || theme === "dark" ? theme : "dark";
+    return theme === "light" || theme === "dark" ? theme : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 document.documentElement.classList.toggle("dark", readPersistedTheme() === "dark");

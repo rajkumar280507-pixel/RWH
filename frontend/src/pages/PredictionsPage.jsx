@@ -78,13 +78,13 @@ export default function PredictionsPage() {
             </div>
           )}
 
-          <div className="mb-4 rounded-lg border border-slate-700 bg-panel/40 p-3 text-[11px] text-slate-400">
+          <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-panel/40 p-3 text-[11px] text-slate-500 dark:text-slate-400">
             {summary.excluded_note}
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <div className="rounded-xl border border-slate-800 bg-panel/50 p-4">
-              <h3 className="text-sm font-semibold text-slate-200">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-4">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 Stations ranked by rate of decline
               </h3>
               <p className="mb-2 text-[10px] text-slate-500">
@@ -92,7 +92,7 @@ export default function PredictionsPage() {
               </p>
               <div className="max-h-[460px] overflow-y-auto">
                 <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-panel text-slate-400">
+                  <thead className="sticky top-0 bg-panel text-slate-500 dark:text-slate-400">
                     <tr className="text-left">
                       <th className="py-1">Station</th>
                       <th>District</th>
@@ -107,7 +107,7 @@ export default function PredictionsPage() {
                       <tr
                         key={t.station_id}
                         onClick={() => setSelectedId(t.station_id)}
-                        className={`cursor-pointer border-t border-slate-800 hover:bg-slate-800/50 ${
+                        className={`cursor-pointer border-t border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
                           selectedId === t.station_id ? "bg-accent/10" : ""
                         }`}
                       >
@@ -132,10 +132,10 @@ export default function PredictionsPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-panel/50 p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-4">
               {series.data ? (
                 <>
-                  <h3 className="text-sm font-semibold text-slate-200">
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                     {series.data.station.station_name || series.data.station.station_code}
                   </h3>
                   <div className="mb-2 text-[11px] text-slate-500">{series.data.station.district}</div>
@@ -204,9 +204,9 @@ function buildTrendLine(observed, trend) {
 
 function Metric({ label, value, className = "" }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-surface/60 p-2">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-surface/60 p-2">
       <div className="text-[10px] uppercase text-slate-500">{label}</div>
-      <div className={`text-sm font-semibold text-slate-100 ${className}`}>{value}</div>
+      <div className={`text-sm font-semibold text-slate-900 dark:text-slate-100 ${className}`}>{value}</div>
     </div>
   );
 }

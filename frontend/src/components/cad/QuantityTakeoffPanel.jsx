@@ -60,7 +60,7 @@ export default function QuantityTakeoffPanel({ result, loading = false, recalcul
 
   if (loading) {
     return (
-      <div className={`glass-panel rounded-xl border border-slate-800 p-4 ${className}`}>
+      <div className={`glass-panel rounded-xl border border-slate-200 dark:border-slate-800 p-4 ${className}`}>
         <Skeleton className="mb-3 h-4 w-40" />
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -165,9 +165,9 @@ export default function QuantityTakeoffPanel({ result, loading = false, recalcul
   }
 
   return (
-    <div className={`glass-panel rounded-xl border border-slate-800 p-4 ${className}`}>
+    <div className={`glass-panel rounded-xl border border-slate-200 dark:border-slate-800 p-4 ${className}`}>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-200">Live Quantity Takeoff</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Live Quantity Takeoff</h3>
         <AnimatePresence mode="wait">
           {recalculating ? (
             <motion.span
@@ -186,7 +186,7 @@ export default function QuantityTakeoffPanel({ result, loading = false, recalcul
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-1 text-[10px] text-slate-500"
+              className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400"
             >
               <Info size={11} />
               From the backend design engine
@@ -206,7 +206,7 @@ export default function QuantityTakeoffPanel({ result, loading = false, recalcul
               transition={{ duration: 0.2 }}
               className={`rounded-lg border p-2.5 ${TONE[t.tone].chip}`}
             >
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-slate-500">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <t.icon size={12} className={`shrink-0 ${TONE[t.tone].icon}`} />
                 <span className="truncate">{t.label}</span>
                 {t.estimated && (
@@ -215,8 +215,8 @@ export default function QuantityTakeoffPanel({ result, loading = false, recalcul
                   </span>
                 )}
               </div>
-              <div className="mt-1 text-sm font-semibold text-slate-100">{t.value}</div>
-              {t.sub && <div className="mt-0.5 text-[10px] text-slate-500">{t.sub}</div>}
+              <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{t.value}</div>
+              {t.sub && <div className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">{t.sub}</div>}
             </motion.div>
           ))}
         </AnimatePresence>

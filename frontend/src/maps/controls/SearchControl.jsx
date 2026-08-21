@@ -38,9 +38,9 @@ export default function SearchControl({ stations = [], map, onSelect, className 
   };
 
   return (
-    <div className={`glass-panel w-64 rounded-xl border border-slate-800/70 shadow-lg dark:border-slate-800/70 ${className}`}>
+    <div className={`glass-panel w-64 rounded-xl border border-slate-200 shadow-lg dark:border-slate-800/70 ${className}`}>
       <div className="flex items-center gap-2 px-3 py-2">
-        <Search size={13} className="shrink-0 text-slate-400" />
+        <Search size={13} className="shrink-0 text-slate-500 dark:text-slate-400" />
         <input
           value={query}
           onChange={(e) => {
@@ -49,26 +49,30 @@ export default function SearchControl({ stations = [], map, onSelect, className 
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search stations…"
-          className="w-full bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
+          className="w-full bg-transparent text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none dark:text-slate-100"
         />
         {query && (
-          <button type="button" onClick={clear} className="shrink-0 text-slate-500 transition hover:text-slate-300">
+          <button
+            type="button"
+            onClick={clear}
+            className="shrink-0 text-slate-500 transition hover:text-slate-700 dark:hover:text-slate-300"
+          >
             <X size={12} />
           </button>
         )}
       </div>
 
       {open && results.length > 0 && (
-        <ul className="max-h-56 overflow-y-auto border-t border-slate-800/70 py-1 dark:border-slate-800/70">
+        <ul className="max-h-56 overflow-y-auto border-t border-slate-200 py-1 dark:border-slate-800/70">
           {results.map((s) => (
             <li key={`${s.kind}-${s.station_id}`}>
               <button
                 type="button"
                 onClick={() => goTo(s)}
-                className="flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left transition hover:bg-slate-800/60"
+                className="flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800/60"
               >
-                <span className="text-xs font-medium text-slate-200">{s.station_name || s.station_code}</span>
-                <span className="text-[10px] text-slate-500">
+                <span className="text-xs font-medium text-slate-800 dark:text-slate-200">{s.station_name || s.station_code}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-500">
                   {s.district || "—"} · {s.kind}
                 </span>
               </button>
@@ -78,7 +82,7 @@ export default function SearchControl({ stations = [], map, onSelect, className 
       )}
 
       {open && query && results.length === 0 && (
-        <div className="border-t border-slate-800/70 px-3 py-2 text-[11px] text-slate-500 dark:border-slate-800/70">
+        <div className="border-t border-slate-200 px-3 py-2 text-[11px] text-slate-500 dark:border-slate-800/70 dark:text-slate-500">
           No stations match "{query}"
         </div>
       )}

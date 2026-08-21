@@ -35,7 +35,7 @@ const STATUS_DOT = {
 const TREND_STYLES = {
   up: { icon: TrendingUp, className: "border-success/30 bg-success/10 text-success" },
   down: { icon: TrendingDown, className: "border-danger/30 bg-danger/10 text-danger" },
-  flat: { icon: Minus, className: "border-slate-500/30 bg-slate-500/10 text-slate-400" },
+  flat: { icon: Minus, className: "border-slate-400/30 bg-slate-500/10 text-slate-600 dark:text-slate-400" },
 };
 
 function relativeTimeFrom(ts) {
@@ -176,7 +176,7 @@ export default function StatCard({
               />
             )}
             {icon && (
-              <span className={`flex h-6 w-6 items-center justify-center rounded-md bg-slate-950/40 text-xs ${t.text}`}>
+              <span className={`flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-xs dark:bg-slate-950/40 ${t.text}`}>
                 {icon}
               </span>
             )}
@@ -186,9 +186,9 @@ export default function StatCard({
         {loading ? (
           <Skeleton className="h-7 w-20" />
         ) : (
-          <span className="text-2xl font-semibold leading-none text-slate-50">
+          <span className="text-2xl font-semibold leading-none text-slate-900 dark:text-slate-50">
             {value == null ? (
-              <span className="text-slate-600">—</span>
+              <span className="text-slate-500 dark:text-slate-600">—</span>
             ) : isNumericValue ? (
               <AnimatedValue value={value} decimals={decimals} />
             ) : (

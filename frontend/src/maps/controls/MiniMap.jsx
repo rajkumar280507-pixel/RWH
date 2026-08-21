@@ -37,7 +37,7 @@ export default function MiniMap({ map, className = "" }) {
 
   return (
     <div
-      className={`glass-panel h-32 w-40 overflow-hidden rounded-lg border border-slate-800/70 shadow-lg dark:border-slate-800/70 ${className}`}
+      className={`glass-panel h-32 w-40 overflow-hidden rounded-lg border border-slate-200 shadow-lg dark:border-slate-800/70 ${className}`}
       title="Overview — drag or zoom the main map to move this"
     >
       <MapContainer

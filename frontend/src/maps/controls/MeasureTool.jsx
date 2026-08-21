@@ -103,8 +103,8 @@ export default function MeasureTool({ map, className = "" }) {
   };
 
   return (
-    <div className={`glass-panel w-48 rounded-xl border border-slate-800/70 p-2.5 text-xs shadow-lg dark:border-slate-800/70 ${className}`}>
-      <div className="mb-1.5 flex items-center gap-1.5 font-semibold text-slate-200">
+    <div className={`glass-panel w-48 rounded-xl border border-slate-200 p-2.5 text-xs shadow-lg dark:border-slate-800/70 ${className}`}>
+      <div className="mb-1.5 flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
         <Ruler size={13} className="text-accent" />
         Measure distance
       </div>
@@ -124,19 +124,19 @@ export default function MeasureTool({ map, className = "" }) {
             type="button"
             onClick={clear}
             title="Clear"
-            className="rounded-lg border border-slate-700 p-1.5 text-slate-400 transition hover:text-slate-200"
+            className="rounded-lg border border-slate-300 p-1.5 text-slate-500 transition hover:text-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             <Trash2 size={12} />
           </button>
         )}
       </div>
       {distance != null && (
-        <div className="mt-1.5 rounded-lg bg-slate-900/60 px-2 py-1.5 text-[11px] text-slate-300">
+        <div className="mt-1.5 rounded-lg bg-slate-100 px-2 py-1.5 text-[11px] text-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
           Length: <span className="font-semibold text-accent">{formatDistance(distance)}</span>
         </div>
       )}
       {active && (
-        <p className="mt-1.5 text-[10px] leading-snug text-slate-500">
+        <p className="mt-1.5 text-[10px] leading-snug text-slate-500 dark:text-slate-500">
           Click the map to add points, double-click to finish.
         </p>
       )}

@@ -1,8 +1,8 @@
 export default function SyncPanel({ runs = [], liveEvent, connected }) {
   return (
-    <div className="rounded-xl border border-slate-700/60 bg-panel/60 p-4 flex flex-col gap-3">
+    <div className="rounded-xl border border-slate-200 bg-panel/60 p-4 flex flex-col gap-3 dark:border-slate-700/60">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-200">Recent Synchronization</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-200">Recent Synchronization</h3>
         <span className={`text-xs flex items-center gap-1 ${connected ? "text-emerald-400" : "text-rose-400"}`}>
           <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "bg-rose-400"}`} />
           {connected ? "Live" : "Disconnected"}
@@ -20,7 +20,7 @@ export default function SyncPanel({ runs = [], liveEvent, connected }) {
 
       <ul className="flex flex-col gap-2 max-h-64 overflow-y-auto">
         {runs.map((run) => (
-          <li key={run.id} className="text-xs flex items-center justify-between border-b border-slate-800 pb-2">
+          <li key={run.id} className="text-xs flex items-center justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
             <div>
               <span className="uppercase text-slate-400 mr-2">{run.source}</span>
               <span

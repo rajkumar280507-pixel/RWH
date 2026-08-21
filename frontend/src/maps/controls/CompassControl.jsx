@@ -8,7 +8,7 @@ import { Compass } from "lucide-react";
 export default function CompassControl({ className = "" }) {
   return (
     <div
-      className={`glass-panel flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-800/70 shadow-lg dark:border-slate-800/70 ${className}`}
+      className={`glass-panel flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 shadow-lg dark:border-slate-800/70 ${className}`}
       title="North is up — this map does not rotate"
     >
       <Compass size={18} className="text-accent" strokeWidth={2.25} />

@@ -25,6 +25,11 @@ import { createRwhDesign } from "../services/api.js";
 // real, persisted submission path (persist defaults to true there).
 const LIVE_PREVIEW_DEBOUNCE_MS = 700;
 
+// Shared input styling — light-first with a dark-mode pair, matching the
+// input pattern already established on DashboardPage.jsx's sizing panel.
+const inputClass =
+  "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500";
+
 const initialState = {
   building_name: "",
   building_type: "residential",
@@ -118,7 +123,7 @@ export default function DesignForm({
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 text-sm"
+      className="flex flex-col gap-2.5 text-sm"
       initial="hidden"
       animate="visible"
       variants={{ visible: { transition: { staggerChildren: 0.035 } } }}
@@ -126,30 +131,32 @@ export default function DesignForm({
       {roofAreaSqm > 0 && <QuickEstimateCard roofAreaSqm={roofAreaSqm} />}
 
       <Field label="Building name" icon={Building2}>
-        <input className="input" value={form.building_name} onChange={set("building_name")} placeholder="Optional" />
+        <input className={inputClass} value={form.building_name} onChange={set("building_name")} placeholder="Optional" />
       </Field>
 
-      <Field label="Building type" icon={Building2}>
-        <select className="input" value={form.building_type} onChange={set("building_type")}>
-          <option value="residential">Residential</option>
-          <option value="commercial">Commercial</option>
-          <option value="institutional">Institutional</option>
-          <option value="industrial">Industrial</option>
-        </select>
-      </Field>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Building type" icon={Building2}>
+          <select className={inputClass} value={form.building_type} onChange={set("building_type")}>
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="institutional">Institutional</option>
+            <option value="industrial">Industrial</option>
+          </select>
+        </Field>
+
+        <Field label="Roof slope (%)" icon={TrendingUp}>
+          <input type="number" step="0.1" className={inputClass} value={form.roof_slope_percent} onChange={set("roof_slope_percent")} />
+        </Field>
+      </div>
 
       <Field label="Roof material" icon={Layers}>
-        <select className="input" value={form.roof_material} onChange={set("roof_material")}>
+        <select className={inputClass} value={form.roof_material} onChange={set("roof_material")}>
           {(roofMaterials ?? []).map((m) => (
             <option key={m.value} value={m.value}>
               {m.label} (Cr ≈ {m.typical_runoff_coefficient})
             </option>
           ))}
         </select>
-      </Field>
-
-      <Field label="Roof slope (%)" icon={TrendingUp}>
-        <input type="number" step="0.1" className="input" value={form.roof_slope_percent} onChange={set("roof_slope_percent")} />
       </Field>
 
       <LiveOrManualField
@@ -163,7 +170,7 @@ export default function DesignForm({
           `${liveContext.rainfall.annual_rainfall_mm} mm/yr — ${liveContext.rainfall.station_name ?? liveContext.rainfall.station_code} (${liveContext.rainfall.distance_km} km)${liveContext.rainfall.extrapolated ? `, extrapolated from ${liveContext.rainfall.days_covered}d` : ""}`
         }
       >
-        <input type="number" className="input" value={form.annual_rainfall_mm} onChange={set("annual_rainfall_mm")} />
+        <input type="number" className={inputClass} value={form.annual_rainfall_mm} onChange={set("annual_rainfall_mm")} />
       </LiveOrManualField>
 
       <LiveOrManualField
@@ -177,11 +184,11 @@ export default function DesignForm({
           `${liveContext.groundwater.water_level_m} m bgl — ${liveContext.groundwater.station_name ?? liveContext.groundwater.station_code} (${liveContext.groundwater.distance_km} km)`
         }
       >
-        <input type="number" step="0.1" className="input" value={form.groundwater_depth_m} onChange={set("groundwater_depth_m")} />
+        <input type="number" step="0.1" className={inputClass} value={form.groundwater_depth_m} onChange={set("groundwater_depth_m")} />
       </LiveOrManualField>
 
       <Field label="Soil type" icon={Mountain}>
-        <select className="input" value={form.soil_type} onChange={set("soil_type")}>
+        <select className={inputClass} value={form.soil_type} onChange={set("soil_type")}>
           {(soilTypes ?? []).map((s) => (
             <option key={s.value} value={s.value}>
               {s.label} (HSG {s.hydrologic_group})
@@ -190,21 +197,23 @@ export default function DesignForm({
         </select>
       </Field>
 
-      <Field label="Population served (optional)" icon={Users}>
-        <input type="number" className="input" value={form.population} onChange={set("population")} placeholder="For storage tank sizing" />
-      </Field>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Population (optional)" icon={Users}>
+          <input type="number" className={inputClass} value={form.population} onChange={set("population")} placeholder="LPCD sizing" />
+        </Field>
 
-      <Field label="Distance to inlet (m)" icon={Milestone}>
-        <input type="number" step="0.5" className="input" value={form.distance_to_inlet_m} onChange={set("distance_to_inlet_m")} />
-      </Field>
+        <Field label="Dist. to inlet (m)" icon={Milestone}>
+          <input type="number" step="0.5" className={inputClass} value={form.distance_to_inlet_m} onChange={set("distance_to_inlet_m")} />
+        </Field>
+      </div>
 
       <motion.label
         variants={fieldVariants}
-        className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-xs text-slate-400"
+        className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-2.5 py-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400"
       >
         <ShieldAlert size={14} className="shrink-0 text-warning" />
-        <input type="checkbox" checked={form.allow_shallow_override} onChange={set("allow_shallow_override")} />
         Override 3.0 m groundwater separation rule (requires site-specific hydrogeological sign-off)
+        <input type="checkbox" className="ml-auto shrink-0" checked={form.allow_shallow_override} onChange={set("allow_shallow_override")} />
       </motion.label>
 
       <motion.div variants={fieldVariants}>
@@ -212,6 +221,7 @@ export default function DesignForm({
           result={previewMutation.data}
           loading={!previewMutation.data && previewMutation.isPending}
           recalculating={!!previewMutation.data && previewMutation.isPending}
+          className="!p-3"
         />
         {previewMutation.isError && (
           <p className="mt-1.5 text-[10px] text-warning">
@@ -226,23 +236,10 @@ export default function DesignForm({
         type="submit"
         disabled={!hasPolygon || submitting}
         whileTap={hasPolygon && !submitting ? { scale: 0.98 } : {}}
-        className="mt-2 rounded-lg bg-accent text-surface font-semibold py-2 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="mt-1 rounded-lg bg-accent py-2 font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-40"
       >
         {submitting ? "Designing…" : hasPolygon ? "Generate Design" : "Capture a rooftop area first"}
       </motion.button>
-
-      <style>{`
-        .input {
-          background: rgba(17, 26, 46, 0.6);
-          border: 1px solid rgb(51 65 85 / 0.6);
-          border-radius: 0.5rem;
-          padding: 0.5rem 0.75rem;
-          color: rgb(241 245 249);
-          width: 100%;
-        }
-        .input:focus { outline: none; border-color: #2dd4bf; }
-        .input:disabled { opacity: 0.4; cursor: not-allowed; }
-      `}</style>
     </motion.form>
   );
 }
@@ -267,12 +264,12 @@ function QuickEstimateCard({ roofAreaSqm }) {
   return (
     <motion.div
       variants={fieldVariants}
-      className="flex items-start gap-2.5 rounded-lg border border-info/20 bg-info/5 px-3 py-2.5 text-xs text-slate-300"
+      className="flex items-start gap-2 rounded-lg border border-info/20 bg-info/5 px-2.5 py-2 text-[11px] text-slate-700 dark:text-slate-300"
     >
-      <Sparkles size={14} className="mt-0.5 shrink-0 text-info" />
+      <Sparkles size={13} className="mt-0.5 shrink-0 text-info" />
       <div>
-        <div className="font-semibold text-slate-200">Quick estimate — {est.shape}</div>
-        <div className="mt-0.5 text-slate-400">
+        <div className="font-semibold text-slate-900 dark:text-slate-100">Quick estimate — {est.shape}</div>
+        <div className="mt-0.5 text-slate-500 dark:text-slate-400">
           Ballpark {est.dims}, {est.pipe} inlet pipe, for {roofAreaSqm.toFixed(0)} m² of catchment. Indicative only —
           the generated design below is computed from the real engine and governs.
         </div>
@@ -284,18 +281,18 @@ function QuickEstimateCard({ roofAreaSqm }) {
 function LiveOrManualField({ label, icon: Icon, useLive, onToggle, liveAvailable, liveSummary, children }) {
   return (
     <motion.div variants={fieldVariants} className="flex flex-col gap-1">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs text-slate-400">
-          {Icon && <Icon size={12} className="text-slate-500" />}
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          {Icon && <Icon size={12} className="text-slate-400 dark:text-slate-500" />}
           {label}
         </span>
-        <label className="flex items-center gap-1 text-[10px] text-accent cursor-pointer">
+        <label className="flex shrink-0 items-center gap-1 text-[10px] text-accent cursor-pointer">
           <input type="checkbox" checked={useLive} onChange={(e) => onToggle(e.target.checked)} />
-          Use live CGWB data
+          Live CGWB
         </label>
       </div>
       {useLive ? (
-        <div className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-slate-300">
+        <div className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-[11px] text-slate-700 dark:text-slate-300">
           {liveAvailable ? (
             <span className="flex items-center gap-1.5">
               <Satellite size={12} className="shrink-0 text-accent" />
@@ -315,8 +312,8 @@ function LiveOrManualField({ label, icon: Icon, useLive, onToggle, liveAvailable
 function Field({ label, icon: Icon, children }) {
   return (
     <motion.label variants={fieldVariants} className="flex flex-col gap-1">
-      <span className="flex items-center gap-1.5 text-xs text-slate-400">
-        {Icon && <Icon size={12} className="text-slate-500" />}
+      <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        {Icon && <Icon size={12} className="text-slate-400 dark:text-slate-500" />}
         {label}
       </span>
       {children}

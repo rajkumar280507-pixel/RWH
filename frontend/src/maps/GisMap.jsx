@@ -134,7 +134,7 @@ export default function GisMap({
   return (
     <MapContainer ref={mapRef} center={TN_CENTER} zoom={7} className="rounded-xl" style={{ height, width: "100%" }}>
       <LayersControl position="topright">
-        <LayersControl.BaseLayer checked name="Dark basemap">
+        <LayersControl.BaseLayer checked name="Hybrid (dark)">
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution="&copy; OpenStreetMap contributors &copy; CARTO"
@@ -150,6 +150,12 @@ export default function GisMap({
           <TileLayer
             url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenTopoMap contributors"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="Street">
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
           />
         </LayersControl.BaseLayer>
       </LayersControl>

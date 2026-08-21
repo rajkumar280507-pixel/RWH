@@ -26,7 +26,7 @@ export default function CoordinateReadout({ map, className = "" }) {
 
   return (
     <div
-      className={`glass-panel flex items-center gap-1.5 rounded-lg border border-slate-800/70 px-2.5 py-1.5 text-[10px] tabular-nums text-slate-300 shadow-lg dark:border-slate-800/70 ${className}`}
+      className={`glass-panel flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] tabular-nums text-slate-700 shadow-lg dark:border-slate-800/70 dark:text-slate-300 ${className}`}
     >
       <Crosshair size={11} className="text-accent" />
       {pos ? (
@@ -34,7 +34,7 @@ export default function CoordinateReadout({ map, className = "" }) {
           {pos.lat.toFixed(4)}, {pos.lng.toFixed(4)}
         </span>
       ) : (
-        <span className="text-slate-500">Hover the map…</span>
+        <span className="text-slate-500 dark:text-slate-500">Hover the map…</span>
       )}
     </div>
   );
