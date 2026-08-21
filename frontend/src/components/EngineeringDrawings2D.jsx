@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import {
   worldToSvg,
   computeScale,
@@ -12,21 +12,57 @@ import {
 import MaterialPatternDefs, { materialFill } from "../lib/materialPatterns.jsx";
 import PitTypeSwitcher, { defaultStructureView } from "./cad/PitTypeSwitcher.jsx";
 import MaterialSpecPopup from "./cad/MaterialSpecPopup.jsx";
+import CustomPitControls from "./cad/CustomPitControls.jsx";
+import { defaultCustomPit, clampCustomPit, STANDARD_FILTER_STACK } from "../lib/customPitQuantities.js";
 
 const n = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : Number(v).toFixed(d));
 const today = () => new Date().toISOString().slice(0, 10);
+
+function customGeometry(customPit) {
+  const p = clampCustomPit(customPit);
+  if (p.shape === "rectangular") {
+    return {
+      kind: "rectangular",
+      widthM: p.widthM,
+      lengthM: p.lengthM,
+      depthM: p.depthM,
+      freeboardM: p.freeboardM,
+      source: "custom",
+      note: "User-entered dimensions — a sketch tool, not an independently engineered structure or BOQ.",
+      label: `CUSTOM RECTANGULAR PIT — ${n(p.lengthM, 2)}m × ${n(p.widthM, 2)}m`,
+    };
+  }
+  return {
+    kind: "circular",
+    diameterM: p.diameterM,
+    depthM: p.depthM,
+    freeboardM: p.freeboardM,
+    source: "custom",
+    note: "User-entered dimensions — a sketch tool, not an independently engineered structure or BOQ.",
+    label: `CUSTOM CIRCULAR PIT — Ø${n(p.diameterM, 2)}m`,
+  };
+}
 
 export default function EngineeringDrawings2D({ result }) {
   const [view, setView] = useState("cross_section");
   const [structureView, setStructureView] = useState(() => defaultStructureView(result));
   const [inspect, setInspect] = useState(null); // { material, position }
+  const [customPit, setCustomPit] = useState(() => defaultCustomPit("circular"));
 
-  const geometry = useMemo(() => deriveStructureGeometry(structureView, result), [structureView, result]);
+  const geometry = useMemo(
+    () => (structureView === "custom" ? customGeometry(customPit) : deriveStructureGeometry(structureView, result)),
+    [structureView, result, customPit]
+  );
 
   if (!result) return null;
 
   const isInjectionBore = Boolean(result.injection_borewell);
   const filterMedia = result.filter_media || [];
+  // Custom sketches always show a sensible filter stack (real data if this
+  // design has it, else the standard IS 15797 split) even on the rare design
+  // that returns none — the other structure views keep the honest "no filter
+  // media data" empty state instead of silently substituting one.
+  const drawingFilterMedia = structureView === "custom" ? (filterMedia.length ? filterMedia : STANDARD_FILTER_STACK) : filterMedia;
 
   const openMaterial = (material, evt) => {
     setInspect({ material, position: { x: evt.clientX, y: evt.clientY } });
@@ -65,7 +101,17 @@ export default function EngineeringDrawings2D({ result }) {
               {geometry.note || "Frontend-only visualization — not an independently engineered structure."}
             </span>
           )}
+          {geometry?.source === "custom" && (
+            <span className="flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-[10px] text-info">
+              <Info size={11} className="shrink-0" />
+              {geometry.note}
+            </span>
+          )}
         </div>
+      )}
+
+      {structureView === "custom" && (view === "cross_section" || view === "plan_view") && (
+        <CustomPitControls pit={customPit} onChange={setCustomPit} filterStack={drawingFilterMedia} />
       )}
 
       {/* SVG Canvas Container */}
@@ -74,8 +120,8 @@ export default function EngineeringDrawings2D({ result }) {
           (geometry ? (
             <CrossSectionSvg
               geometry={geometry}
-              filterMedia={filterMedia}
-              injectionBorewell={result.injection_borewell}
+              filterMedia={drawingFilterMedia}
+              injectionBorewell={structureView === "custom" ? null : result.injection_borewell}
               onMaterialClick={openMaterial}
             />
           ) : (

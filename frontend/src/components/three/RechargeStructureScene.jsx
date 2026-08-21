@@ -15,7 +15,7 @@ import { useMemo, useRef, useState, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { AlertTriangle, Box } from "lucide-react";
+import { AlertTriangle, Box, PencilRuler } from "lucide-react";
 import EmptyState from "../ui/EmptyState.jsx";
 import FilterStackLayers from "./FilterStackLayers.jsx";
 import WireframeToggle from "./WireframeToggle.jsx";
@@ -24,8 +24,33 @@ import SceneToolbar from "./SceneToolbar.jsx";
 import { useUiStore } from "../../store/uiStore.js";
 import { resolveMaterialKey } from "../../lib/materialPatterns.jsx";
 import { tokenColorHex, tokenColorCss } from "../../lib/threeColorTokens.js";
+import CustomPitControls from "../cad/CustomPitControls.jsx";
+import { defaultCustomPit, clampCustomPit, STANDARD_FILTER_STACK } from "../../lib/customPitQuantities.js";
 
 const n = (v, d = 2) => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(d));
+
+/** Custom-pit sketch state -> the same `dims` shape `deriveDims` produces, so every downstream renderer (FilterStackLayers, StructureEnvelope) needs no branching for "is this custom." */
+function dimsFromCustomPit(customPit) {
+  const p = clampCustomPit(customPit);
+  if (p.shape === "rectangular") {
+    return {
+      kind: "rect_pit",
+      lengthM: p.lengthM,
+      widthM: p.widthM,
+      depthM: p.depthM,
+      freeboardM: p.freeboardM,
+      label: `Custom Rectangular Pit — ${n(p.lengthM)}m × ${n(p.widthM)}m × ${n(p.depthM)}m`,
+    };
+  }
+  return {
+    kind: "pit",
+    diameterM: p.diameterM,
+    depthM: p.depthM,
+    freeboardM: p.freeboardM,
+    pitCount: 1,
+    label: `Custom Circular Pit — Ø${n(p.diameterM)}m × ${n(p.depthM)}m`,
+  };
+}
 
 /**
  * Resolves the backend response into a plain-metres structure descriptor.
@@ -66,7 +91,10 @@ function deriveDims(result) {
 function framing(dims) {
   if (!dims) return { horizontal: 3, vertical: 2 };
   if (dims.kind === "pit") {
-    return { horizontal: dims.diameterM, vertical: dims.depthM + dims.freeboardM };
+    return { horizontal: dims.diameterM, vertical: dims.depthM + (dims.freeboardM || 0) };
+  }
+  if (dims.kind === "rect_pit") {
+    return { horizontal: Math.max(dims.lengthM, dims.widthM), vertical: dims.depthM + (dims.freeboardM || 0) };
   }
   return { horizontal: Math.max(dims.widthM, dims.totalLengthM || dims.widthM), vertical: dims.depthM };
 }
@@ -75,10 +103,18 @@ export default function RechargeStructureScene({ result }) {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme !== "light";
 
-  const dims = useMemo(() => deriveDims(result), [result]);
-  const filterMedia = result?.filter_media || [];
+  const [customModeOn, setCustomModeOn] = useState(false);
+  const [customPit, setCustomPit] = useState(() => defaultCustomPit("circular"));
+
+  const computedDims = useMemo(() => deriveDims(result), [result]);
+  const dims = customModeOn ? dimsFromCustomPit(customPit) : computedDims;
+  const filterMedia = customModeOn
+    ? result?.filter_media?.length
+      ? result.filter_media
+      : STANDARD_FILTER_STACK
+    : result?.filter_media || [];
   const groundwaterDepthM = result?.groundwater_depth_m;
-  const borewell = result?.injection_borewell;
+  const borewell = customModeOn ? null : result?.injection_borewell;
 
   const { horizontal, vertical } = framing(dims);
   const groundExtent = Math.max(horizontal * 4.5, 6);
@@ -134,7 +170,7 @@ export default function RechargeStructureScene({ result }) {
     }
   }, []);
 
-  if (!result || !dims) {
+  if (!result || !computedDims) {
     return (
       <EmptyState
         icon={<Box size={18} />}
@@ -153,16 +189,33 @@ export default function RechargeStructureScene({ result }) {
             <Box size={15} className="text-accent" /> Interactive 3D Structure Model
           </h3>
           <p className="text-[11px] text-slate-400">
-            Real WebGL scene, scaled 1:1 to the computed design — {dims.label}
+            {customModeOn
+              ? <>User-entered dimensions — {dims.label} <span className="italic text-slate-500">(sketch, not an engineered design)</span></>
+              : <>Real WebGL scene, scaled 1:1 to the computed design — {dims.label}</>}
           </p>
         </div>
-        {borewell && (
-          <span className="flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-[10px] text-info">
-            <AlertTriangle size={11} className="shrink-0" />
-            Includes conceptual injection borewell casing (Ø150mm × {n(boreDepthM, 1)}m)
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {borewell && (
+            <span className="flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-[10px] text-info">
+              <AlertTriangle size={11} className="shrink-0" />
+              Includes conceptual injection borewell casing (Ø150mm × {n(boreDepthM, 1)}m)
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setCustomModeOn((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition ${
+              customModeOn
+                ? "border-accent/40 bg-accent/15 text-accent"
+                : "border-slate-700 bg-slate-900 text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <PencilRuler size={12} /> {customModeOn ? "Custom Design: On" : "Custom Design"}
+          </button>
+        </div>
       </div>
+
+      {customModeOn && <CustomPitControls pit={customPit} onChange={setCustomPit} filterStack={filterMedia} />}
 
       <div className="relative h-[460px] w-full overflow-hidden rounded-lg border border-slate-800 bg-[#050b14]">
         <Canvas
@@ -283,6 +336,15 @@ function StructureEnvelope({ dims, isDark }) {
       <mesh position={[0, -totalHeight / 2, 0]}>
         <cylinderGeometry args={[r, r, totalHeight, 48, 1, true]} />
         <meshStandardMaterial color={color} roughness={1} transparent opacity={0.08} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+    );
+  }
+
+  if (dims.kind === "rect_pit") {
+    return (
+      <mesh position={[0, -totalHeight / 2, 0]}>
+        <boxGeometry args={[dims.lengthM + 0.03, totalHeight, dims.widthM + 0.03]} />
+        <meshStandardMaterial color={color} roughness={1} transparent opacity={0.08} depthWrite={false} />
       </mesh>
     );
   }

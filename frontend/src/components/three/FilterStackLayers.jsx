@@ -89,6 +89,8 @@ function FilterLayerMesh({ dims, layer, thickness, baseCenterY, explodeDistance,
       <mesh castShadow={false} receiveShadow={false}>
         {dims.kind === "pit" ? (
           <cylinderGeometry args={[dims.diameterM / 2, dims.diameterM / 2, thickness, 48]} />
+        ) : dims.kind === "rect_pit" ? (
+          <boxGeometry args={[dims.lengthM, thickness, dims.widthM]} />
         ) : (
           <boxGeometry args={[dims.widthM, thickness, dims.totalLengthM || dims.widthM]} />
         )}

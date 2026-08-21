@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Circle, RectangleHorizontal, Rows3, ArrowDownToLine, Container, MoveDown, Info } from "lucide-react";
+import { Circle, RectangleHorizontal, Rows3, ArrowDownToLine, Container, MoveDown, Info, PencilRuler } from "lucide-react";
 
 /**
  * Structure-type visualization switcher for the 2D CAD tab.
@@ -68,6 +68,14 @@ export const STRUCTURE_VIEWS = [
     real: () => false,
     tooltip: "Frontend-only variant — visualized using the pit's dimensions redrawn narrow and deep. The engine does not compute a separate recharge-shaft design.",
     requires: (r) => Boolean(r?.pit),
+  },
+  {
+    id: "custom",
+    label: "Custom Design",
+    icon: PencilRuler,
+    real: () => false,
+    tooltip: "Sketch your own circular or rectangular pit with dimensions you enter — always available, independent of this design's computed result.",
+    requires: () => true,
   },
 ];
 
