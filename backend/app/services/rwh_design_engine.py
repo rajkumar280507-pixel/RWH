@@ -260,11 +260,11 @@ def compute_design(inputs: RwhDesignInput) -> RwhDesignResult:
     #    profile means gravity infiltration alone won't be effective).
     trigger_reasons = []
     if inputs.groundwater_depth_m > BOREWELL_GW_DEPTH_TRIGGER_M:
-        trigger_reasons.append("groundwater_depth_gt_8m")
+        trigger_reasons.append("groundwater depth > 8 m")
     if hsg in BOREWELL_HSG_TRIGGER:
-        trigger_reasons.append("hydrologic_soil_group_c_or_d")
+        trigger_reasons.append("hydrologic soil group C/D (low permeability)")
     if is_clayey(inputs.soil_type):
-        trigger_reasons.append("clayey_soil")
+        trigger_reasons.append("clayey soil (low infiltration rate)")
 
     if trigger_reasons:
         result.injection_borewell = {

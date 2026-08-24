@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { FileText, Printer, QrCode, Download, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { FileText, Printer, QrCode, Download, Loader2, Trash2, AlertTriangle, Layers } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import {
   deleteDesign,
+  deleteAllDesigns,
   getDesign,
   getDesigns,
   generateReport,
@@ -17,6 +18,90 @@ import {
 
 const inr = (v) => (v == null ? "—" : `₹${Number(v).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`);
 const num = (v, d = 2) => (v == null ? "—" : Number(v).toFixed(d));
+
+function generatePitCadDataUrl(detailData) {
+  if (!detailData) return null;
+  const pits = detailData.pits || [];
+  const design = detailData.design || {};
+  const pit = pits[0] || { diameter_m: 2.22, depth_m: 1.75, freeboard_m: 0.3 };
+
+  const dia = pit.diameter_m ? Number(pit.diameter_m).toFixed(2) : "2.22";
+  const depth = pit.depth_m ? Number(pit.depth_m).toFixed(2) : "1.75";
+  const freeboard = pit.freeboard_m ? Number(pit.freeboard_m).toFixed(2) : "0.30";
+  const catchment = design.catchment_area_sqm ? Number(design.catchment_area_sqm).toFixed(1) : "149.0";
+  const harvest = design.annual_harvest_m3 ? Number(design.annual_harvest_m3).toFixed(1) : "200.8";
+
+  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+  <rect width="800" height="480" fill="#ffffff" />
+  
+  <rect x="15" y="15" width="770" height="450" fill="none" stroke="#1e293b" stroke-width="2" />
+  <rect x="15" y="415" width="770" height="50" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5" />
+  
+  <text x="35" y="438" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#0f3d5c">
+    IS 15797:2008 RECHARGE PIT 2D CAD SCHEMATIC (CROSS-SECTION)
+  </text>
+  <text x="35" y="455" font-family="Arial, sans-serif" font-size="10" fill="#475569">
+    Design #${design.id || 102} | Catchment: ${catchment} m² | Yield: ${harvest} m³/yr | Diameter: Ø${dia}m | Depth: ${depth}m
+  </text>
+  <text x="640" y="445" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#0284c7">
+    SCALE 1:20 (NTS)
+  </text>
+
+  <line x1="60" y1="110" x2="740" y2="110" stroke="#15803d" stroke-width="3" stroke-dasharray="6,4" />
+  <text x="70" y="100" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#15803d">
+    GROUND LEVEL (GL ±0.00m)
+  </text>
+
+  <rect x="250" y="110" width="300" height="240" fill="#f8fafc" stroke="#0f172a" stroke-width="2.5" />
+
+  <rect x="250" y="110" width="300" height="35" fill="#e0f2fe" opacity="0.8" />
+  <text x="400" y="132" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#0369a1">
+    FREEBOARD ZONE (${freeboard}m AIR GAP)
+  </text>
+
+  <rect x="250" y="145" width="300" height="60" fill="#fef08a" stroke="#ca8a04" stroke-width="1.5" />
+  <text x="400" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#854d0e">
+    Coarse Sand Layer (1.5 - 2.0 mm)
+  </text>
+
+  <rect x="250" y="205" width="300" height="65" fill="#cbd5e1" stroke="#475569" stroke-width="1.5" />
+  <text x="400" y="242" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1e293b">
+    Graded Gravel (5 - 10 mm)
+  </text>
+
+  <rect x="250" y="270" width="300" height="80" fill="#94a3b8" stroke="#0f172a" stroke-width="1.5" />
+  <text x="400" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#0f172a">
+    Coarse Aggregate / Boulders (50 - 200 mm)
+  </text>
+
+  <path d="M 60,85 L 210,85 L 250,125" fill="none" stroke="#0284c7" stroke-width="4" />
+  <polygon points="250,125 238,118 242,128" fill="#0284c7" />
+  <text x="70" y="75" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#0284c7">
+    110mm uPVC ROOF DOWNPIPE (RAINWATER INLET)
+  </text>
+
+  <line x1="60" y1="385" x2="740" y2="385" stroke="#0284c7" stroke-width="2" stroke-dasharray="6,4" />
+  <text x="70" y="375" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#0284c7">
+    SEASONAL HIGH GROUNDWATER TABLE (SAFE UNSATURATED BUFFER &gt; 3.0m)
+  </text>
+
+  <line x1="250" y1="45" x2="550" y2="45" stroke="#0f172a" stroke-width="1.5" />
+  <line x1="250" y1="40" x2="250" y2="50" stroke="#0f172a" stroke-width="1.5" />
+  <line x1="550" y1="40" x2="550" y2="50" stroke="#0f172a" stroke-width="1.5" />
+  <text x="400" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#0f172a">
+    PIT DIAMETER: Ø${dia} m
+  </text>
+
+  <line x1="580" y1="110" x2="580" y2="350" stroke="#0f172a" stroke-width="1.5" />
+  <line x1="575" y1="110" x2="585" y2="110" stroke="#0f172a" stroke-width="1.5" />
+  <line x1="575" y1="350" x2="585" y2="350" stroke="#0f172a" stroke-width="1.5" />
+  <text x="595" y="235" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#0f172a">
+    PIT DEPTH: ${depth} m
+  </text>
+</svg>`;
+
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgString)));
+}
 
 export default function ReportsPage() {
   const [selectedId, setSelectedId] = useState(null);
@@ -37,6 +122,14 @@ export default function ReportsPage() {
     },
   });
 
+  const removeAllDesigns = useMutation({
+    mutationFn: deleteAllDesigns,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["designs"] });
+      setSelectedId(null);
+    },
+  });
+
   return (
     <DashboardLayout
       title="Reports"
@@ -45,8 +138,8 @@ export default function ReportsPage() {
         detail.data && (
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-panel/60 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:border-accent/40 hover:text-accent print:hidden"
-            title="Lightweight browser print — for the full formatted PDF, use Generate PDF Report below"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-panel/60 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:border-accent/40 hover:text-accent print:hidden"
+            title="Lightweight browser print"
           >
             <Printer size={13} /> Print / Save PDF
           </button>
@@ -54,15 +147,42 @@ export default function ReportsPage() {
       }
     >
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="glass-panel rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-4 print:hidden">
-          <h3 className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
-            Saved designs ({designs.data?.length ?? 0})
-          </h3>
+        <div className="glass-panel rounded-xl border border-slate-200 dark:border-slate-800 bg-panel/50 p-3 print:hidden flex flex-col max-h-[calc(100vh-140px)]">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+              Saved Designs ({designs.data?.length ?? 0})
+            </h3>
+            {designs.data && designs.data.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Are you sure you want to DELETE ALL ${designs.data.length} saved design reports? This cannot be undone.`
+                    )
+                  ) {
+                    removeAllDesigns.mutate();
+                  }
+                }}
+                disabled={removeAllDesigns.isPending}
+                className="flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400"
+                title="Clear all saved reports"
+              >
+                {removeAllDesigns.isPending ? (
+                  <Loader2 size={11} className="animate-spin" />
+                ) : (
+                  <Trash2 size={11} />
+                )}
+                <span>Clear All Reports</span>
+              </button>
+            )}
+          </div>
+
           {designs.isLoading && (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
           )}
           {designs.data?.length === 0 && (
@@ -72,14 +192,16 @@ export default function ReportsPage() {
               description="Create one in the RWH Design module and it will appear here."
             />
           )}
-          <ul className="max-h-[560px] space-y-2 overflow-y-auto">
+
+          {/* Left list container: compact spacing, hidden scrollbar */}
+          <ul className="flex-1 space-y-1.5 overflow-y-auto pr-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {(designs.data ?? []).map((d) => (
               <li
                 key={d.id}
                 onClick={() => setSelectedId(d.id)}
-                className={`group relative cursor-pointer rounded-lg border p-3 pr-8 text-xs transition ${
+                className={`group relative cursor-pointer rounded-lg border p-2.5 pr-7 text-xs transition ${
                   selectedId === d.id
-                    ? "border-accent/50 bg-accent/10"
+                    ? "border-sky-500 bg-sky-500/10 dark:bg-sky-500/20 font-medium"
                     : "border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                 }`}
               >
@@ -93,24 +215,24 @@ export default function ReportsPage() {
                     }
                   }}
                   disabled={removeDesign.isPending && removeDesign.variables === d.id}
-                  className="absolute right-2 top-2 rounded p-1 text-slate-600 opacity-0 transition hover:bg-danger/20 hover:text-danger group-hover:opacity-100 disabled:opacity-50"
+                  className="absolute right-1.5 top-1.5 rounded p-1 text-slate-400 opacity-0 transition hover:bg-rose-500/20 hover:text-rose-600 group-hover:opacity-100 disabled:opacity-50"
                 >
                   {removeDesign.isPending && removeDesign.variables === d.id ? (
-                    <Loader2 size={12} className="animate-spin" />
+                    <Loader2 size={11} className="animate-spin" />
                   ) : (
-                    <Trash2 size={12} />
+                    <Trash2 size={11} />
                   )}
                 </button>
-                <div className="font-semibold text-slate-800 dark:text-slate-200">
+                <div className="font-bold text-slate-800 dark:text-slate-100 truncate text-xs">
                   {d.building_name || `Design #${d.id}`}
                 </div>
-                <div className="text-slate-500">
+                <div className="text-[11px] text-slate-500 truncate">
                   {d.structure_type?.replace(/_/g, " ")} · {num(d.catchment_area_sqm, 0)} m²
                   {d.has_injection_borewell ? " · + borewell" : ""}
                 </div>
-                <div className="mt-1 flex justify-between text-[10px] text-slate-500">
+                <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400">
                   <span>{new Date(d.created_at).toLocaleDateString()}</span>
-                  <span className="text-accent">{inr(d.estimated_cost_inr)}</span>
+                  <span className="font-bold text-sky-600 dark:text-sky-400">{inr(d.estimated_cost_inr)}</span>
                 </div>
               </li>
             ))}
@@ -155,7 +277,7 @@ export default function ReportsPage() {
  * already mounted and DesignResults already exposes a snapshot button) can
  * pass real captured images without any backend changes.
  */
-function ReportGenerationPanel({ designId }) {
+function ReportGenerationPanel({ designId, detailData }) {
   const queryClient = useQueryClient();
   const [preparedByName, setPreparedByName] = useState("");
   const [preparedByDesignation, setPreparedByDesignation] = useState("");
@@ -169,11 +291,14 @@ function ReportGenerationPanel({ designId }) {
   });
 
   const generate = useMutation({
-    mutationFn: () =>
-      generateReport(designId, {
+    mutationFn: () => {
+      const cadDrawingImage = generatePitCadDataUrl(detailData);
+      return generateReport(designId, {
+        cadDrawingImage,
         preparedBy: { name: preparedByName || null, designation: preparedByDesignation || null },
         reviewedBy: { name: reviewedByName || null, designation: reviewedByDesignation || null },
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["report", designId] });
     },

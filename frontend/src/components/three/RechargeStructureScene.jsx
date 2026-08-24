@@ -12,8 +12,9 @@
  * doesn't need to orchestrate five separate pieces.
  */
 import { useMemo, useRef, useState, useCallback } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { Droplets } from "lucide-react";
 import * as THREE from "three";
 import { AlertTriangle, Box, PencilRuler } from "lucide-react";
 import EmptyState from "../ui/EmptyState.jsx";
@@ -137,6 +138,9 @@ export default function RechargeStructureScene({ result }) {
   const cutHalfRange = Math.max(horizontal / 2, 0.5);
   const [cutValue, setCutValue] = useState(0);
   const [snapshotUrl, setSnapshotUrl] = useState(null);
+  // Off by default so the scene stays a static render until the operator
+  // opts in to the per-frame ripple (see AnimatedWaterPlane's useFrame).
+  const [waterAnimated, setWaterAnimated] = useState(false);
 
   const clipPlane = useCutPlane([1, 0, 0]);
   setCutOffset(clipPlane, cutValue);
@@ -182,7 +186,7 @@ export default function RechargeStructureScene({ result }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-200 shadow-xl">
+    <div className="flex w-full flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-200 shadow-xl">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div>
           <h3 className="flex items-center gap-2 text-sm font-bold text-slate-100">
@@ -201,6 +205,18 @@ export default function RechargeStructureScene({ result }) {
               Includes conceptual injection borewell casing (Ø150mm × {n(boreDepthM, 1)}m)
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setWaterAnimated((v) => !v)}
+            title="Animate the water table's surface ripple (uses a real per-frame render loop only while on)"
+            className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition ${
+              waterAnimated
+                ? "border-info/40 bg-info/15 text-info"
+                : "border-slate-700 bg-slate-900 text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Droplets size={12} /> {waterAnimated ? "Water Animation: On" : "Animate Water"}
+          </button>
           <button
             type="button"
             onClick={() => setCustomModeOn((v) => !v)}
@@ -265,19 +281,16 @@ export default function RechargeStructureScene({ result }) {
             </mesh>
           )}
 
-          {/* Water table plane */}
+          {/* Water table plane — a real vertex-displaced ripple driven by
+              useFrame when `waterAnimated` is on; static (and frame-cheap)
+              otherwise. */}
           {groundwaterDepthM != null && groundwaterDepthM > 0 && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -groundwaterDepthM, 0]}>
-              <planeGeometry args={[groundExtent, groundExtent]} />
-              <meshStandardMaterial
-                color={tokenColorHex("groundwater", isDark)}
-                roughness={0.15}
-                metalness={0.05}
-                transparent
-                opacity={0.32}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
+            <AnimatedWaterPlane
+              size={groundExtent}
+              depth={groundwaterDepthM}
+              color={tokenColorHex("groundwater", isDark)}
+              animated={waterAnimated}
+            />
           )}
 
           <CutSectionPlaneVisual plane={clipPlane} size={Math.max(groundExtent * 0.4, 3)} active={cutOn} />
@@ -321,6 +334,50 @@ export default function RechargeStructureScene({ result }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Water-table surface. When `animated`, displaces the plane's vertices with
+ * a real per-vertex sine ripple each frame via `useFrame` — off by default
+ * so the scene only pays the extra per-frame vertex-update cost when the
+ * operator actually asks to see it.
+ */
+function AnimatedWaterPlane({ size, depth, color, animated }) {
+  const meshRef = useRef(null);
+  const geomRef = useRef(null);
+  const basePositions = useRef(null);
+
+  useFrame((state) => {
+    if (!animated) return;
+    const geom = geomRef.current;
+    if (!geom) return;
+    if (!basePositions.current) {
+      basePositions.current = geom.attributes.position.array.slice();
+    }
+    const pos = geom.attributes.position;
+    const base = basePositions.current;
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < pos.count; i++) {
+      const x = base[i * 3];
+      const y = base[i * 3 + 1];
+      pos.setZ(i, Math.sin(x * 1.4 + t * 1.6) * 0.012 + Math.cos(y * 1.1 + t * 1.2) * 0.012);
+    }
+    pos.needsUpdate = true;
+  });
+
+  return (
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -depth, 0]}>
+      <planeGeometry ref={geomRef} args={[size, size, 24, 24]} />
+      <meshStandardMaterial
+        color={color}
+        roughness={0.15}
+        metalness={0.05}
+        transparent
+        opacity={0.32}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
   );
 }
 

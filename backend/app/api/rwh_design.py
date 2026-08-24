@@ -208,6 +208,14 @@ def delete_design(design_id: int, db: Session = Depends(get_db)):
     return {"deleted": design_id}
 
 
+@router.delete("/designs")
+def delete_all_designs(db: Session = Depends(get_db)):
+    """Deletes all saved designs."""
+    result = db.execute(text("DELETE FROM rwh_designs"))
+    db.commit()
+    return {"deleted_count": result.rowcount}
+
+
 @router.get("/designs")
 def list_designs(db: Session = Depends(get_db)):
     """All persisted designs, newest first — backs the Reports module list."""

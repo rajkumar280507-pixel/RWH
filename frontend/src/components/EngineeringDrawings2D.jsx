@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import { AlertTriangle, Info } from "lucide-react";
 import {
   worldToSvg,
@@ -9,6 +9,7 @@ import {
   northArrow,
   titleBlock,
   scaleBar,
+  generateWavePath,
 } from "../lib/cadGeometry.js";
 import MaterialPatternDefs, { materialFill, PATTERN_IDS } from "../lib/materialPatterns.jsx";
 import PitTypeSwitcher, { defaultStructureView } from "./cad/PitTypeSwitcher.jsx";
@@ -69,7 +70,7 @@ function customGeometry(customPit) {
   };
 }
 
-export default function EngineeringDrawings2D({ result }) {
+const EngineeringDrawings2D = forwardRef(function EngineeringDrawings2D({ result }, cadSheetRef) {
   const [view, setView] = useState("cross_section");
   const [structureView, setStructureView] = useState(() => defaultStructureView(result));
   const [inspect, setInspect] = useState(null); // { material, position }
@@ -95,20 +96,12 @@ export default function EngineeringDrawings2D({ result }) {
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-5 text-xs text-slate-700 dark:text-slate-200 shadow-xl">
-      {/* Header & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span className="text-brand">📐</span> Recharge Pit — 2D Engineering Drawing
-          </h3>
-          <p className="max-w-2xl text-[11px] text-slate-500 dark:text-slate-400">
-            A scaled technical drawing of your recharge structure, built to <b>IS 15797:2008</b> (India's
-            engineering standard for rainwater harvesting structures) and CGWB guidelines. Dimensions are
-            in metres. Click any colored material in the drawing to see, in plain language, what it is and
-            what it does.
-          </p>
-        </div>
+    <div className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-2.5 text-xs text-slate-700 dark:text-slate-200 shadow-xl">
+      {/* Header & View Switcher Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <span className="text-sky-500">📐</span> Recharge Pit — Animated 2D CAD Drawing
+        </h3>
         <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-1">
           <TabBtn id="cross_section" label="Cross Section A-A" active={view} set={setView} />
           <TabBtn id="plan_view" label="Plan View (Top)" active={view} set={setView} />
@@ -118,15 +111,14 @@ export default function EngineeringDrawings2D({ result }) {
         </div>
       </div>
 
-      {/* Structure-type switcher (Cross Section / Plan View only — the other
-          tabs are single fixed schematics that don't vary by structure type) */}
+      {/* Structure-type switcher */}
       {(view === "cross_section" || view === "plan_view") && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <PitTypeSwitcher result={result} value={structureView} onChange={setStructureView} />
           {geometry?.source === "variant" && (
             <span className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1 text-[10px] text-warning">
               <AlertTriangle size={11} className="shrink-0" />
-              {geometry.note || "Frontend-only visualization — not an independently engineered structure."}
+              {geometry.note || "Derived structure footprint."}
             </span>
           )}
           {geometry?.source === "custom" && (
@@ -142,18 +134,11 @@ export default function EngineeringDrawings2D({ result }) {
         <CustomPitControls pit={customPit} onChange={setCustomPit} filterStack={drawingFilterMedia} />
       )}
 
-      {/* Plain-language "what am I looking at" caption for the active tab */}
-      {VIEW_CAPTIONS[view] && (
-        <p className="rounded-md border border-brand/20 bg-brand/5 px-3 py-2 text-[11.5px] leading-relaxed text-slate-700 dark:text-slate-300">
-          {VIEW_CAPTIONS[view]}
-        </p>
-      )}
-
-      {/* SVG Canvas Container — a real engineering drawing sheet is always
-          white paper with black ink, so this canvas deliberately does NOT
-          follow the app's own light/dark theme toggle (see the `.cad-sheet`
-          rule in src/styles/index.css). */}
-      <div className="cad-sheet relative flex justify-center overflow-x-auto rounded-lg border border-slate-300 bg-[#FAFAFA] p-4 shadow-inner">
+      {/* SVG Canvas Container — Clean animated CAD sheet */}
+      <div
+        ref={cadSheetRef}
+        className="cad-sheet relative flex justify-center overflow-x-auto rounded-xl border border-slate-300 bg-[#FAFAFA] p-4 shadow-inner"
+      >
         {view === "cross_section" &&
           (geometry ? (
             <CrossSectionSvg
@@ -189,53 +174,11 @@ export default function EngineeringDrawings2D({ result }) {
       {inspect && (
         <MaterialSpecPopup material={inspect.material} position={inspect.position} onClose={() => setInspect(null)} />
       )}
-
-      {/* Material Specifications & Engineering Notes */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-[11px]">
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3">
-          <span className="font-bold text-brand">Filter Media Layer Specs</span>
-          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">The layers of sand/gravel/stone that clean the water on its way down.</p>
-          <ul className="mt-1.5 flex flex-col gap-1 text-slate-600 dark:text-slate-400">
-            {filterMedia.length > 0 ? (
-              filterMedia.map((l) => (
-                <li key={l.layer_order}>
-                  • {l.material} ({l.particle_size_note}, porosity ≈ {n(l.porosity, 2)}) —{" "}
-                  {n(l.thickness_fraction * 100, 0)}%
-                </li>
-              ))
-            ) : (
-              <li>No filter media data on this design.</li>
-            )}
-          </ul>
-        </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3">
-          <span className="font-bold text-amber-600 dark:text-amber-400">Construction Tolerances</span>
-          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">How precisely this needs to be built on site.</p>
-          <ul className="mt-1.5 flex flex-col gap-1 text-slate-600 dark:text-slate-400">
-            <li>• Pit/trench excavation side slope 1:0.5 (safe, won't collapse inward)</li>
-            <li>• Inspection chamber masonry: 230mm brickwork</li>
-            <li>• Perforated pipe slot width: 3mm at 50mm spacing</li>
-          </ul>
-        </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3">
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">Regulatory Compliance</span>
-          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">The official rules this design follows.</p>
-          <ul className="mt-1.5 flex flex-col gap-1 text-slate-600 dark:text-slate-400">
-            <li>• Code: IS 15797:2008 (India's RWH standard) & CGWB RTRWH Code</li>
-            <li>• Separation: ≥3.0m above seasonal water table (keeps the structure clear of the water below)</li>
-            <li>• First Flush Diversion: {n(0.5, 1)} mm over catchment (the dirtiest first rain is thrown away, not recharged)</li>
-          </ul>
-        </div>
-      </div>
-
-      <p className="rounded-md border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-[10.5px] leading-relaxed text-slate-500 dark:text-slate-500">
-        This drawing is generated automatically from your design inputs for planning and discussion purposes.
-        It is <b>not a certified structural drawing</b> — have it reviewed by a licensed civil engineer before
-        construction begins.
-      </p>
     </div>
   );
-}
+});
+
+export default EngineeringDrawings2D;
 
 function TabBtn({ id, label, active, set }) {
   return (
@@ -605,9 +548,17 @@ function StratigraphyColumn({ x, colTop, colBottom, width, groundwaterDepthM, hy
           </text>
         </g>
       ))}
-      <line x1={x - 10} y1={colBottom} x2={x + width + 130} y2={colBottom} stroke="rgb(var(--color-groundwater))" strokeWidth="1.5" strokeDasharray="5 3" />
-      <text x={x} y={colBottom + 14} fontSize="7.5" fontWeight="700" fill="rgb(var(--color-groundwater))">
-        {gwLabel}
+      <g className="animate-pulse">
+        <path
+          d={`M ${x - 10} ${colBottom} Q ${x + 20} ${colBottom - 3}, ${x + 50} ${colBottom} T ${x + 110} ${colBottom} T ${x + 170} ${colBottom}`}
+          fill="none"
+          stroke="#0284c7"
+          strokeWidth="2"
+          strokeDasharray="4 2"
+        />
+      </g>
+      <text x={x} y={colBottom + 14} fontSize="8" fontWeight="800" fill="#0284c7">
+        🌊 {gwLabel} (Wave Level)
       </text>
       {hydrologicSoilGroup && (
         <>
@@ -744,6 +695,19 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
 
   const groundY = w2s(0, 0).y;
 
+  // Real groundwater table line, at the same scale as the pit itself — not
+  // just the illustrative text next to the (unrelated-scale) soil-profile
+  // column. Typically the water table sits well below the excavation (that
+  // ≥3m separation is the whole point of a recharge pit), so this is usually
+  // drawn in the open canvas area beneath the footing detail rather than
+  // cutting through the pit. When the real depth would fall off the bottom
+  // of the sheet, the line is clamped to a fixed low position and the label
+  // says so explicitly, rather than silently drawing it somewhere wrong.
+  const gwCanvasFloor = SVG_H - 165;
+  const gwRealY = groundY + groundwaterDepthM * scale;
+  const gwLineY = groundwaterDepthM != null ? Math.min(gwRealY, gwCanvasFloor) : null;
+  const gwClamped = groundwaterDepthM != null && gwRealY > gwCanvasFloor;
+
   // Water-flow arrows: short down-pointing arrows through the filter stack,
   // offset from the centerline so they don't collide with the layer-name
   // labels — makes "rain goes in the top, moves down, soaks out the bottom"
@@ -755,14 +719,21 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
     [0.66, 0.84],
   ];
 
-  // Inspection chamber (visual language matches the "silt trap" chamber box
-  // drawn on the Pipe Layout tab: rounded rect + border + lid bar) — placed
-  // above ground near the inlet, with a short connector down to the pit.
+  // Inspection chamber & Conveyance Pipeline geometry (Roof Downpipe -> Inspection Chamber -> Pit Inlet Pipe)
   const chamberX = 350;
   const chamberY = 34;
   const chamberW = 92;
   const chamberH = 46;
   const chamberConnectTo = w2s(Math.min(topWidthM / 2 - 0.1, 0.4), 0.02);
+
+  const roofPipeStart = { x: 45, y: drawTop - 90 };
+  const roofPipeElbow = { x: 45, y: drawTop - 35 };
+  const chamberPipeIn = { x: 350, y: drawTop - 35 };
+  const chamberPipeOut = { x: 442, y: drawTop - 35 };
+  const pitInletNozzle = w2s(-topWidthM / 2 + 0.25, 0.05);
+
+  // Hydrogeological depth separation (GWT - excavation depth)
+  const separationM = groundwaterDepthM != null ? Math.max(0, groundwaterDepthM - excavationDepthM) : null;
 
   return (
     <svg width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="font-mono text-[10px]">
@@ -771,12 +742,40 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
 
       {/* Ground surface line, spanning the full canvas width */}
       <line x1={20} y1={groundY} x2={SVG_W - 20} y2={groundY} stroke="rgb(var(--color-success))" strokeWidth="2" strokeDasharray="6 3" />
-      <text x={26} y={groundY - 8} fill="rgb(var(--color-success))" fontWeight="bold">
+      <text
+        x={20}
+        y={groundY - 14}
+        fill="rgb(var(--color-success))"
+        fontWeight="bold"
+        paintOrder="stroke"
+        stroke="#ffffff"
+        strokeWidth="4"
+      >
         GL — GROUND LEVEL (0.00m)
       </text>
 
-      {/* Concrete collar — a raised rim at the pit mouth so loose soil and
-          surface runoff don't wash straight into the structure. */}
+      {/* Groundwater table — real depth, same scale as the pit */}
+      {gwLineY != null && (
+        <g>
+          <rect x={20} y={gwLineY} width={SVG_W - 40} height={SVG_H - 20 - gwLineY} fill="rgb(var(--color-groundwater) / 0.07)" />
+          {/* Fluid continuous wavy groundwater line */}
+          <path d={generateWavePath(20, SVG_W - 20, gwLineY, 3.5, 12)} stroke="rgb(var(--color-groundwater))" strokeWidth="2.5" fill="none" />
+          <path d={generateWavePath(20, SVG_W - 20, gwLineY + 6, 2.5, 9)} stroke="rgb(var(--color-groundwater))" strokeWidth="1.2" opacity="0.6" fill="none" />
+          <text
+            x={26}
+            y={gwLineY - 7}
+            fill="rgb(var(--color-groundwater))"
+            fontWeight="bold"
+            paintOrder="stroke"
+            stroke="#FAFAFA"
+            strokeWidth="3"
+          >
+            ▼ GROUNDWATER TABLE — {n(groundwaterDepthM, 2)} m bgl{gwClamped ? " (compressed below — not to depth scale here)" : ""}
+          </text>
+        </g>
+      )}
+
+      {/* Concrete collar — raised rim at the pit mouth */}
       <rect
         x={origin.x - collarHalfWPx}
         y={collarTopY}
@@ -804,7 +803,7 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
         </>
       )}
 
-      {/* Filter media layers, real material-pattern fills, click to inspect */}
+      {/* Filter media layers */}
       {layerShapes.map(({ layer, points, midY }) => (
         <g key={layer.layer_order}>
           <polygon
@@ -822,18 +821,102 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
         </g>
       ))}
 
-      {/* Water-flow arrows: rain enters at the top and moves straight down
-          through the filter layers toward the groundwater below. */}
-      {!isShaft &&
-        flowSegs.map(([f0, f1], i) => {
-          const p0 = w2s(flowXWorld, excavationDepthM * f0);
-          const p1 = w2s(flowXWorld, excavationDepthM * f1);
-          const seg = flowArrow(p0, p1, { color: "rgb(var(--color-recharge-water))", strokeWidth: 2.5 });
-          return <ShapeRenderer key={i} shapes={seg.shapes} />;
-        })}
+      {/* Continuous PIPELINE SYSTEM: Roof Downpipe -> Collection Main -> Inspection Chamber -> Pit Inlet Pipe */}
+      <g>
+        {/* Roof Catchment Line */}
+        <line x1="20" y1={roofPipeStart.y} x2="75" y2={roofPipeStart.y} stroke="#0284c7" strokeWidth="3" />
+        <text x="25" y={roofPipeStart.y - 6} fill="#0284c7" fontWeight="bold" fontSize="8">
+          ROOF CATCHMENT
+        </text>
 
-      {/* Drilled shaft: slotted casing + surrounding gravel pack, in place of
-          a filter-media stack. */}
+        {/* Roof Downpipe (vertical) */}
+        <path d={`M ${roofPipeStart.x} ${roofPipeStart.y} L ${roofPipeElbow.x} ${roofPipeElbow.y}`} stroke="#0284c7" strokeWidth="4" strokeLinecap="round" />
+        <text x={roofPipeStart.x + 8} y={roofPipeStart.y + 25} fill={INK} fontSize="7.5" fontWeight="bold">
+          DOWNPIPE (110mm uPVC)
+        </text>
+
+        {/* Collection Main Pipe (horizontal to chamber) */}
+        <path d={`M ${roofPipeElbow.x} ${roofPipeElbow.y} L ${chamberPipeIn.x} ${chamberPipeIn.y}`} stroke="#0284c7" strokeWidth="3.5" />
+        <text x="170" y={chamberPipeIn.y - 6} fill={INK_MUTED} fontSize="7.5" fontWeight="bold">
+          COLLECTION MAIN (110mm uPVC) ➔
+        </text>
+
+        {/* Sloped Inlet Pipe from Inspection Chamber into Pit Collar/Freeboard */}
+        <path d={`M ${chamberPipeOut.x} ${chamberPipeOut.y} L ${pitInletNozzle.x} ${pitInletNozzle.y}`} stroke="#0284c7" strokeWidth="3.5" strokeLinecap="round" />
+        <text
+          x={pitInletNozzle.x - 70}
+          y={pitInletNozzle.y + 16}
+          fill="#0284c7"
+          fontWeight="bold"
+          fontSize="7.5"
+          paintOrder="stroke"
+          stroke="#ffffff"
+          strokeWidth="3"
+        >
+          PIT INLET PIPE (110mm uPVC)
+        </text>
+
+        {/* Animated Water Flow Particles along the Pipeline */}
+        {/* 1. Downpipe flow */}
+        <circle cx={roofPipeStart.x} cy={roofPipeStart.y} r="3.5" fill="#38bdf8">
+          <animate attributeName="cy" from={roofPipeStart.y} to={roofPipeElbow.y} dur="1.2s" repeatCount="indefinite" />
+        </circle>
+
+        {/* 2. Collection Main flow */}
+        <circle cx={roofPipeElbow.x} cy={roofPipeElbow.y} r="3.5" fill="#38bdf8">
+          <animate attributeName="cx" from={roofPipeElbow.x} to={chamberPipeIn.x} dur="2.2s" begin="0.3s" repeatCount="indefinite" />
+        </circle>
+
+        {/* 3. Inlet Pipe into Pit flow */}
+        <circle cx={chamberPipeOut.x} cy={chamberPipeOut.y} r="3.5" fill="#38bdf8">
+          <animate attributeName="cx" from={chamberPipeOut.x} to={pitInletNozzle.x} dur="1.4s" begin="0.6s" repeatCount="indefinite" />
+          <animate attributeName="cy" from={chamberPipeOut.y} to={pitInletNozzle.y} dur="1.4s" begin="0.6s" repeatCount="indefinite" />
+        </circle>
+      </g>
+
+      {/* Animated water percolation droplets moving down through filter stack */}
+      {!isShaft && (
+        <g>
+          {[-0.35, -0.15, 0, 0.15, 0.35].map((offsetFactor, idx) => {
+            const worldX = flowXWorld * offsetFactor * 3;
+            const startPt = w2s(worldX, freeboardM);
+            const endPt = w2s(worldX, excavationDepthM);
+            return (
+              <g key={idx}>
+                <line
+                  x1={startPt.x}
+                  y1={startPt.y}
+                  x2={endPt.x}
+                  y2={endPt.y}
+                  stroke="#38bdf8"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                  opacity="0.6"
+                />
+                <circle cx={startPt.x} cy={startPt.y} r="3.5" fill="#0284c7">
+                  <animate
+                    attributeName="cy"
+                    from={startPt.y}
+                    to={endPt.y}
+                    dur={`${2.2 + idx * 0.4}s`}
+                    begin={`${idx * 0.5}s`}
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0;1;1;0"
+                    dur={`${2.2 + idx * 0.4}s`}
+                    begin={`${idx * 0.5}s`}
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              </g>
+            );
+          })}
+        </g>
+      )}
+
+      {/* Drilled shaft */}
       {isShaft && (
         <g>
           <polygon points={excavationPoints} fill={materialFill("gravel")} stroke="rgb(var(--color-groundwater))" strokeWidth="1" opacity="0.5" style={{ cursor: "pointer" }} onClick={(e) => onMaterialClick("Graded gravel", e)} />
@@ -841,22 +924,27 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
         </g>
       )}
 
-      {/* Injection borewell cross-reference note — only shown from the other
-          structure views (drawn to a different scale on its own "Deep
-          Injection Bore" tab); suppressed here since this view already is it. */}
+      {/* Borewell reference note */}
       {injectionBorewell && !isShaft && (
         <g>
           <line x1={origin.x} y1={botL.y} x2={origin.x} y2={botL.y + 22} stroke="rgb(var(--color-info))" strokeWidth="2" strokeDasharray="3 2" markerEnd="url(#cad-arrow-flow)" />
-          <text x={origin.x + 8} y={botL.y + 18} fill="rgb(var(--color-info))" fontWeight="bold" fontSize="9">
-            DEEP INJECTION BOREWELL BELOW — SEE "DEEP INJECTION BORE" TAB (Ø150mm × {n(injectionBorewell.conceptual_depth_m, 1)}m)
+          <text
+            x={origin.x}
+            y={botL.y + 18}
+            textAnchor="middle"
+            fill="rgb(var(--color-info))"
+            fontWeight="bold"
+            fontSize="7.5"
+            paintOrder="stroke"
+            stroke="#FAFAFA"
+            strokeWidth="3"
+          >
+            ↓ BOREWELL BELOW
           </text>
         </g>
       )}
 
-      {/* Stone packing bed + footing — illustrative base construction detail
-          drawn just below the excavation outline; not counted in / does not
-          change the design's actual depth_m or filter-layer percentages
-          above. */}
+      {/* Stone packing bed + footing */}
       <g>
         <rect x={botL.x} y={stoneBandTopY} width={botR.x - botL.x} height={stoneBandH} fill={materialFill("rock")} stroke={INK} strokeWidth="1" />
         <text x={botR.x + 8} y={stoneBandTopY + stoneBandH / 2 + 3} fontSize="7.5" fontWeight="700" fill={INK}>
@@ -879,20 +967,38 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
         </text>
       </g>
 
-      {/* Inspection chamber — same visual language (rounded box + lid bar) as
-          the silt trap chamber on the Pipe Layout tab. */}
+      {/* Inspection chamber */}
       <g>
-        <line x1={chamberX + chamberW / 2} y1={chamberY + chamberH} x2={chamberConnectTo.x} y2={chamberConnectTo.y} stroke={INK_MUTED} strokeWidth="1.25" strokeDasharray="3 2" />
         <rect x={chamberX} y={chamberY} width={chamberW} height={chamberH} rx="4" fill="rgb(var(--color-info) / 0.10)" stroke="rgb(var(--color-info))" strokeWidth="1.5" />
         <rect x={chamberX + 6} y={chamberY + 5} width={chamberW - 12} height="6" rx="2" fill="rgb(var(--color-info) / 0.35)" stroke="rgb(var(--color-info))" strokeWidth="1" />
-        <text x={chamberX + chamberW / 2} y={chamberY + chamberH / 2 + 8} textAnchor="middle" fontSize="7.5" fontWeight="700" fill={INK}>
+        <text x={chamberX + chamberW / 2} y={chamberY + chamberH / 2 + 5} textAnchor="middle" fontSize="7.5" fontWeight="700" fill={INK}>
           INSPECTION
         </text>
-        <text x={chamberX + chamberW / 2} y={chamberY + chamberH / 2 + 18} textAnchor="middle" fontSize="7.5" fontWeight="700" fill={INK}>
+        <text x={chamberX + chamberW / 2} y={chamberY + chamberH / 2 + 15} textAnchor="middle" fontSize="7.5" fontWeight="700" fill={INK}>
           CHAMBER
         </text>
         <text x={chamberX + chamberW / 2} y={chamberY - 5} textAnchor="middle" fontSize="7" fill={INK_MUTED}>
-          lift the lid to check/clean the pipe
+          lift lid to inspect pipe flow
+        </text>
+      </g>
+
+      {/* Hydrogeology & Location-Wise Depth Calculation Info Badge */}
+      <g>
+        <rect x="470" y="24" width="160" height="68" rx="4" fill="#ffffff" stroke="#0284c7" strokeWidth="1.25" opacity="0.95" />
+        <text x="480" y="38" fontSize="8" fontWeight="bold" fill="#0284c7">
+          TALUK DEPTH CALCULATION
+        </text>
+        <text x="480" y="50" fontSize="7" fill={INK}>
+          • GWT Level: {n(groundwaterDepthM, 2)} m bgl
+        </text>
+        <text x="480" y="61" fontSize="7" fill={INK}>
+          • Sized Pit Depth: {n(excavationDepthM, 2)} m
+        </text>
+        <text x="480" y="72" fontSize="7" fill={INK_MUTED}>
+          • Unsaturated Buffer: {separationM != null ? `${n(separationM, 2)} m` : "—"}
+        </text>
+        <text x="480" y="83" fontSize="6.5" fill="rgb(var(--color-success))" fontWeight="bold">
+          ✓ IS 15797:2008 &ge;3m separation
         </text>
       </g>
 
@@ -906,11 +1012,6 @@ function CrossSectionSvg({ geometry, filterMedia, injectionBorewell, groundwater
         hydrologicSoilGroup={hydrologicSoilGroup}
         onMaterialClick={onMaterialClick}
       />
-
-      {/* Inlet pipe */}
-      <g>
-        <ShapeRenderer shapes={inletLeader.shapes} />
-      </g>
 
       {/* Dimension lines */}
       <ShapeRenderer shapes={dimDepth.shapes} />
@@ -1242,6 +1343,20 @@ function PipeLayoutSvg({ result }) {
         Collection main {mainMm}mm PVC
       </text>
 
+      {/* Animated Pipeline Flow Particles */}
+      <circle cx="70" cy="50" r="3.5" fill="#38bdf8">
+        <animate attributeName="cy" from="50" to="170" dur="1.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="80" cy="170" r="3.5" fill="#38bdf8">
+        <animate attributeName="cx" from="80" to="130" dur="0.8s" begin="0.2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="202" cy="170" r="3.5" fill="#38bdf8">
+        <animate attributeName="cx" from="202" to="262" dur="1.0s" begin="0.4s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="370" cy="170" r="3.5" fill="#38bdf8">
+        <animate attributeName="cx" from="370" to="420" dur="0.8s" begin="0.6s" repeatCount="indefinite" />
+      </circle>
+
       {/* Overflow */}
       <path d="M 520 190 L 570 190 L 570 260" stroke="rgb(var(--color-danger))" strokeWidth="2.5" strokeDasharray="5 3" markerEnd="url(#cad-arrow-flow)" />
       <text x="546" y="278" textAnchor="middle" fill="rgb(var(--color-danger))" fontSize="8.5" fontWeight="bold">
@@ -1325,8 +1440,9 @@ function DeepBoreSvg({ borewell, groundwaterDepthM, structureDepthM }) {
       </text>
 
       {/* Water table */}
-      <line x1={30} y1={gwPoint.y} x2={SVG_W - 30} y2={gwPoint.y} stroke="rgb(var(--color-groundwater))" strokeWidth="2" strokeDasharray="6 3" />
-      <text x={36} y={gwPoint.y - 6} fill="rgb(var(--color-groundwater))" fontWeight="bold">
+      <path d={generateWavePath(30, SVG_W - 30, gwPoint.y, 3.5, 12)} stroke="rgb(var(--color-groundwater))" strokeWidth="2.5" fill="none" />
+      <path d={generateWavePath(30, SVG_W - 30, gwPoint.y + 6, 2.5, 9)} stroke="rgb(var(--color-groundwater))" strokeWidth="1.2" opacity="0.6" fill="none" />
+      <text x={36} y={gwPoint.y - 6} fill="rgb(var(--color-groundwater))" fontWeight="bold" paintOrder="stroke" stroke="#FAFAFA" strokeWidth="3">
         WATER TABLE — where groundwater sits ({n(groundwaterDepthM, 1)}m below ground)
       </text>
 

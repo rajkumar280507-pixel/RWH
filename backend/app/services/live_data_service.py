@@ -61,7 +61,7 @@ def normalize_groundwater_depth(raw_value: float | None) -> float | None:
     depth = abs(value) if value < 0 else value
     if depth <= 0 or depth > MAX_PLAUSIBLE_DEPTH_M:
         return None
-    return round(depth, 3)
+    return round(depth, 2)
 
 # Haversine distance in km between (lat, lon) and each row's (latitude,
 # longitude), expressed in raw SQL so it can be used in ORDER BY / WHERE.
@@ -170,7 +170,7 @@ def get_live_annual_rainfall(db: Session, lon: float, lat: float) -> LiveRainfal
 
     total_mm = float(agg["total_mm"])
     extrapolated = days_covered < 365
-    annual_estimate = round(total_mm * (365.0 / days_covered), 1) if extrapolated else round(total_mm, 1)
+    annual_estimate = round(total_mm * (365.0 / days_covered), 2) if extrapolated else round(total_mm, 2)
 
     return LiveRainfallEstimate(
         station_id=station["id"],

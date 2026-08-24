@@ -332,3 +332,24 @@ export function scaleBar(originPoint, scale, unitsToShow = 4, segmentMeters = 1)
   });
   return { shapes, width: unitsToShow * segW, height: barH + 14 };
 }
+
+/**
+ * Generates an SVG path 'd' string representing a smooth, continuous sine wave
+ * from (x1, y) to (x2, y).
+ */
+export function generateWavePath(x1, x2, y, waveAmp = 3, waveLen = 12) {
+  if (x2 <= x1) return `M ${x1} ${y}`;
+  let d = `M ${x1} ${y}`;
+  let currentX = x1;
+  let up = true;
+  while (currentX < x2) {
+    const nextX = Math.min(currentX + waveLen, x2);
+    const midX = (currentX + nextX) / 2;
+    const controlY = up ? y - waveAmp : y + waveAmp;
+    d += ` Q ${midX.toFixed(2)} ${controlY.toFixed(2)}, ${nextX.toFixed(2)} ${y}`;
+    currentX = nextX;
+    up = !up;
+  }
+  return d;
+}
+

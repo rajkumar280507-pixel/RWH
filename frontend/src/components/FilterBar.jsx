@@ -5,15 +5,15 @@ import { getFilterOptions } from "../services/api.js";
 // Tailwind-utility equivalent of the old inline `.filter-input` class (kept
 // as a shared constant instead of a second component so every <select>/
 // <input> below stays byte-identical in behavior, just restyled).
-const FILTER_INPUT_CLS =
-  "min-w-[10rem] rounded-lg border border-slate-700/80 bg-surface/90 px-2.5 py-[0.45rem] text-[13px] text-slate-100 transition-colors hover:enabled:border-slate-500 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 disabled:cursor-not-allowed disabled:opacity-45";
+const getFilterInputCls = (isSelected) =>
+  `min-w-[8.5rem] rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-all ${
+    isSelected
+      ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-300 dark:bg-sky-500/20 dark:border-sky-400 hover:border-sky-600"
+      : "border-slate-300 bg-white text-slate-900 hover:border-sky-400 focus:border-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400"
+  } focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer placeholder:text-slate-400 placeholder:font-normal dark:placeholder:text-slate-500`;
 
-/**
- * Shared filter controls for the telemetry views. Freshness defaults to 30
- * days because the CGWB feed contains years of history — showing every
- * station's "latest" reading without a freshness bound mixes live telemetry
- * with stations that stopped reporting long ago.
- */
+const optionCls = "bg-white text-slate-900 font-semibold dark:bg-slate-900 dark:text-slate-100";
+
 export const FRESHNESS_OPTIONS = [
   { value: 2, label: "Last 48 hours" },
   { value: 7, label: "Last 7 days" },
@@ -26,7 +26,7 @@ export const EMPTY_FILTERS = {
   state: "",
   district: "",
   taluk: "",
-  maxAgeDays: 30,
+  maxAgeDays: "",
   search: "",
   showGroundwater: true,
   showRainfall: true,
@@ -51,16 +51,13 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
   const set = (key) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     let extra = {};
-    if (key === "state") {
-      extra = { district: "", taluk: "" };
-    } else if (key === "district") {
-      extra = { taluk: "" };
-    } else if (key === "taluk" && value && !filters.district && options.data?.taluks_by_district) {
-      for (const [dist, tList] of Object.entries(options.data.taluks_by_district)) {
-        if (tList.includes(value)) {
-          extra = { district: dist };
-          break;
-        }
+    if (key === "district") {
+      localStorage.setItem("rwh_district", value || "");
+      localStorage.setItem("rwh_taluk", "");
+    } else if (key === "taluk") {
+      localStorage.setItem("rwh_taluk", value || "");
+      if (extra.district) {
+        localStorage.setItem("rwh_district", extra.district);
       }
     }
 
@@ -74,15 +71,15 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
   const activeCount = [filters.state, filters.district, filters.taluk, filters.search].filter(Boolean).length;
 
   return (
-    <div className="glass-panel rounded-xl border border-slate-800/70 p-4 shadow-sm dark:border-slate-800/70">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="glass-panel rounded-xl border border-slate-200 p-2.5 sm:p-3 shadow-xs dark:border-slate-800">
+      <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-            <Filter size={12} className="text-accent" />
+          <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            <Filter size={12} className="text-sky-500" />
             Filters
           </h3>
           {activeCount > 0 && (
-            <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-medium text-accent">
+            <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400">
               {activeCount} active
             </span>
           )}
@@ -90,7 +87,7 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
             <button
               type="button"
               onClick={() => options.refetch()}
-              className="text-[10px] font-medium text-rose-400 underline hover:text-rose-300"
+              className="text-[10px] font-medium text-rose-500 underline hover:text-rose-400"
             >
               ⚠ Retry options fetch
             </button>
@@ -99,60 +96,60 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
         <button
           type="button"
           onClick={() => onChange({ ...EMPTY_FILTERS })}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1 text-[11px] text-slate-300 transition hover:border-slate-500 hover:bg-slate-800"
+          className="flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-0.5 text-[10px] font-semibold text-slate-700 transition hover:border-sky-500 hover:text-sky-600 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
         >
-          <RotateCcw size={11} />
+          <RotateCcw size={10} />
           Reset
         </button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-2">
         <Control label="State">
-          <select className={FILTER_INPUT_CLS} value={filters.state ?? ""} onChange={set("state")}>
-            <option value="">All states</option>
-            {options.isLoading && <option disabled value="">Loading states...</option>}
+          <select className={getFilterInputCls(Boolean(filters.state))} value={filters.state ?? ""} onChange={set("state")}>
+            <option className={optionCls} value="">All states</option>
+            {options.isLoading && <option className={optionCls} disabled value="">Loading states...</option>}
             {(options.data?.states ?? []).map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option className={optionCls} key={s} value={s}>{s}</option>
             ))}
           </select>
         </Control>
 
         <Control label="District">
-          <select className={FILTER_INPUT_CLS} value={filters.district ?? ""} onChange={set("district")}>
-            <option value="">All districts</option>
-            {options.isLoading && <option disabled value="">Loading districts...</option>}
+          <select className={getFilterInputCls(Boolean(filters.district))} value={filters.district ?? ""} onChange={set("district")}>
+            <option className={optionCls} value="">All districts</option>
+            {options.isLoading && <option className={optionCls} disabled value="">Loading districts...</option>}
             {districts.map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <option className={optionCls} key={d} value={d}>{d}</option>
             ))}
           </select>
         </Control>
 
         <Control label="Taluk">
           <select
-            className={FILTER_INPUT_CLS}
+            className={getFilterInputCls(Boolean(filters.taluk))}
             value={filters.taluk ?? ""}
             onChange={set("taluk")}
           >
-            <option value="">All taluks</option>
-            {options.isLoading && <option disabled value="">Loading taluks...</option>}
+            <option className={optionCls} value="">All taluks</option>
+            {options.isLoading && <option className={optionCls} disabled value="">Loading taluks...</option>}
             {taluks.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option className={optionCls} key={t} value={t}>{t}</option>
             ))}
           </select>
         </Control>
 
         <Control label="Data freshness">
-          <select className={FILTER_INPUT_CLS} value={filters.maxAgeDays ?? ""} onChange={set("maxAgeDays")}>
+          <select className={getFilterInputCls(Boolean(filters.maxAgeDays))} value={filters.maxAgeDays ?? ""} onChange={set("maxAgeDays")}>
             {FRESHNESS_OPTIONS.map((o) => (
-              <option key={String(o.value)} value={o.value}>{o.label}</option>
+              <option className={optionCls} key={String(o.value)} value={o.value}>{o.label}</option>
             ))}
           </select>
         </Control>
 
         <Control label="Station name">
           <input
-            className={FILTER_INPUT_CLS}
-            placeholder="Search…"
+            className={getFilterInputCls(Boolean(filters.search))}
+            placeholder="Search station…"
             value={filters.search ?? ""}
             onChange={set("search")}
           />
@@ -172,20 +169,6 @@ export default function FilterBar({ filters, onChange, showLayers = false }) {
               checked={filters.showRainfall !== false}
               onChange={(v) => onChange({ ...filters, showRainfall: v })}
             />
-            <Toggle
-              label="Recharge Heatmap"
-              color="bg-amber-400"
-              checked={filters.showHeatmap === true}
-              onChange={(v) => onChange({ ...filters, showHeatmap: v })}
-            />
-            <Toggle
-              label="Recharge Zones"
-              color="bg-emerald-400"
-              checked={false}
-              disabled
-              tooltip="Requires zone-boundary geometry the API doesn't provide yet — not fabricated data"
-              badge="no data"
-            />
           </div>
         )}
       </div>
@@ -204,26 +187,26 @@ function Control({ label, children }) {
 
 function Toggle({ label, color, checked, onChange, disabled = false, tooltip, badge }) {
   return (
-    <label
+    <button
+      type="button"
       title={tooltip}
-      className={`flex items-center gap-2 text-xs text-slate-300 ${
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      disabled={disabled}
+      onClick={() => !disabled && onChange?.(!checked)}
+      className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+        disabled
+          ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-50 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-500"
+          : checked
+          ? "border-sky-500 bg-sky-500/10 text-sky-700 dark:border-sky-400 dark:bg-sky-500/20 dark:text-sky-300 shadow-sm cursor-pointer"
+          : "border-slate-300 bg-white text-slate-700 hover:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
       }`}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onChange?.(e.target.checked)}
-        className="accent-teal-400 disabled:cursor-not-allowed"
-      />
-      <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
-      {label}
+      <span className={`h-2.5 w-2.5 rounded-full ${color} ${checked ? "animate-pulse shadow-sm" : "opacity-40"}`} />
+      <span>{label}</span>
       {badge && (
-        <span className="rounded-full border border-slate-700 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-slate-500">
+        <span className="rounded-full border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[9px] uppercase tracking-wide font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
           {badge}
         </span>
       )}
-    </label>
+    </button>
   );
 }

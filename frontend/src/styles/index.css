@@ -47,12 +47,16 @@
   --color-success: 16 185 129; /* emerald */
   --color-info: 14 165 233; /* sky blue */
 
-  /* Glass-morphism (light) — lighter/cleaner than the dark-mode variant so
-     floating panels (command palette, notifications) read as frosted white
-     glass rather than a dim overlay. */
-  --glass-bg: rgba(255, 255, 255, 0.75);
+  /* Card surface (light) — solid, opaque white cards with a soft elevation
+     shadow (SaaS-dashboard style: Page Views / Total Profit-style tiles),
+     not a frosted/blurred glass panel. The `--glass-*` names are kept as-is
+     since `.glass-panel` is referenced by dozens of components across every
+     page — retheming the tokens here is what makes the whole app pick up
+     the flatter, more professional card look in one place. */
+  --glass-bg: #ffffff;
   --glass-border: rgba(15, 23, 42, 0.06);
-  --glass-blur: 16px;
+  --glass-blur: 0px;
+  --glass-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px -12px rgba(15, 23, 42, 0.10);
 }
 
 .dark {
@@ -83,10 +87,13 @@
   --color-success: 52 211 153;
   --color-info: 56 189 248;
 
-  /* Glass-morphism (dark) */
+  /* Card surface (dark) — kept genuinely translucent here (unlike the light
+     palette above) since dark mode still layers panels over a visible
+     gradient backdrop elsewhere in the app. */
   --glass-bg: rgba(17, 26, 46, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: 16px;
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 10px 24px -12px rgba(0, 0, 0, 0.4);
 }
 
 html, body, #root {
@@ -97,6 +104,18 @@ html, body, #root {
    `font-sans` stack to body automatically — it only makes the `font-sans`
    utility available. Set it explicitly here so Inter/IBM Plex Sans is the
    app-wide default without needing a `font-sans` class on every root node. */
+/* Hide scrollbars globally across all elements while preserving scrolling functionality */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
 body {
   font-family: "Inter", "IBM Plex Sans", system-ui, sans-serif;
 }
@@ -107,6 +126,53 @@ body {
   background: #0b1220;
 }
 
+/* Fix Leaflet default link color override on popup text/buttons */
+.leaflet-container a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff;
+  border-radius: 0.85rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  padding: 0.15rem;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-popup-tip {
+  background: #ffffff;
+}
+
+.dark .leaflet-popup-tip {
+  background: #0f172a;
+}
+
+.leaflet-popup-content {
+  margin: 0.85rem 1rem;
+  line-height: 1.5;
+}
+
+/* Universal Input & Placeholder polish */
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+input:hover::placeholder,
+select:hover::placeholder,
+textarea:hover::placeholder {
+  opacity: 0.95;
+}
+
 /* Reusable glass-morphism utility, built from the tokens above. Tailwind's
    backdrop-blur-* utilities already cover blur; this class is for the
    background/border pairing used across floating panels. */
@@ -115,6 +181,7 @@ body {
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
 }
 
 /* CAD drafting sheet (EngineeringDrawings2D.jsx canvas only) — a real

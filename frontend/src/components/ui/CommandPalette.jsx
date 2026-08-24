@@ -7,19 +7,17 @@ import {
   Droplets,
   FileText,
   TrendingUp,
-  SunMoon,
   Search,
 } from "lucide-react";
 import { useUiStore } from "../../store/uiStore.js";
 
-function buildCommands({ navigate, toggleTheme }) {
+function buildCommands({ navigate }) {
   return [
     { id: "dashboard", label: "Dashboard", hint: "Live overview", icon: LayoutDashboard, run: () => navigate("/") },
     { id: "gis-map", label: "GIS Map", hint: "Station network", icon: Map, run: () => navigate("/gis-map") },
     { id: "rwh-design", label: "RWH Design", hint: "Design a structure", icon: Droplets, run: () => navigate("/rwh-design") },
     { id: "reports", label: "Reports", hint: "Saved designs", icon: FileText, run: () => navigate("/reports") },
     { id: "predictions", label: "Predictions", hint: "Forecast trends", icon: TrendingUp, run: () => navigate("/predictions") },
-    { id: "toggle-theme", label: "Toggle theme", hint: "Switch dark / light", icon: SunMoon, run: () => toggleTheme() },
   ];
 }
 
@@ -33,13 +31,12 @@ export default function CommandPalette() {
   const open = useUiStore((s) => s.commandPaletteOpen);
   const openPalette = useUiStore((s) => s.openCommandPalette);
   const closePalette = useUiStore((s) => s.closeCommandPalette);
-  const toggleTheme = useUiStore((s) => s.toggleTheme);
 
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
 
-  const commands = useMemo(() => buildCommands({ navigate, toggleTheme }), [navigate, toggleTheme]);
+  const commands = useMemo(() => buildCommands({ navigate }), [navigate]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

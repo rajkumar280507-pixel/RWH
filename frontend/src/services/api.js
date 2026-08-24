@@ -2,8 +2,13 @@ import axios from "axios";
 
 // In dev, Vite proxies "/api" to localhost:8000 (see vite.config.js). In a
 // static deploy (e.g. Vercel) there's no proxy, so VITE_API_URL must point
-// at wherever the backend actually runs.
-const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api";
+// at wherever the backend actually runs. API_HOST is the single source of
+// truth for the backend's own origin (empty string in dev, where relative
+// paths already resolve through the proxy) — everything that needs to reach
+// the backend directly (not through the /api-prefixed axios instance)
+// resolves against this same constant instead of re-reading the env var.
+const API_HOST = import.meta.env.VITE_API_URL || "";
+const API_BASE = API_HOST ? `${API_HOST}/api` : "/api";
 
 export const api = axios.create({ baseURL: API_BASE });
 
@@ -30,6 +35,7 @@ export const getStationSeries = (stationId) =>
 export const getDesigns = () => api.get("/rwh/designs").then((r) => r.data);
 export const getDesign = (id) => api.get(`/rwh/design/${id}`).then((r) => r.data);
 export const deleteDesign = (id) => api.delete(`/rwh/design/${id}`).then((r) => r.data);
+export const deleteAllDesigns = () => api.delete("/rwh/designs").then((r) => r.data);
 
 export const getRoofMaterials = () => api.get("/rwh/roof-materials").then((r) => r.data);
 export const getSoilTypes = () => api.get("/rwh/soil-types").then((r) => r.data);
@@ -52,11 +58,16 @@ export const generateReport = (designId, { cadDrawingImage, snapshot3dImage, pre
     .then((r) => r.data);
 export const getReport = (designId) => api.get(`/reports/${designId}`).then((r) => r.data);
 // Returns the absolute download URL for the browser to navigate/open directly
-// (FileResponse download, not JSON) — resolved against the API's own origin
-// so it works whether or not VITE_API_URL is set.
-export const downloadReportUrl = (designId) => `${api.defaults.baseURL}/reports/${designId}/download`;
+// (FileResponse download, not JSON) — resolved against API_HOST so it works
+// whether or not VITE_API_URL is set, and stays in sync with resolveStaticUrl
+// below rather than each computing the backend origin its own way.
+export const downloadReportUrl = (designId) => `${API_HOST}/api/reports/${designId}/download`;
 // Backend-served static assets (e.g. QR code PNGs under /static/reports/)
-// live outside the /api prefix — resolve them against the API's own origin
-// the same way, so they work behind both the dev proxy and VITE_API_URL.
-export const resolveStaticUrl = (path) =>
-  path ? `${import.meta.env.VITE_API_URL ?? ""}${path}` : null;
+// live outside the /api prefix — resolve them against the same API_HOST.
+export const resolveStaticUrl = (path) => (path ? `${API_HOST}${path}` : null);
+
+// Weather Forecast Intelligence — independent module, see
+// backend/app/api/weather.py. Never asks the caller for a location string;
+// takes the lat/lon already selected elsewhere in the app.
+export const getWeatherForecast = (lat, lon) =>
+  api.get("/weather/forecast", { params: { lat, lon } }).then((r) => r.data);

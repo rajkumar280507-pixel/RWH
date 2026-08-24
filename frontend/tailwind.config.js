@@ -20,8 +20,8 @@ export default {
         // stay constant across the light/dark toggle, matching the fixed
         // dark-navy sidebar decision below.
         brand: {
-          DEFAULT: "#2563EB",
-          dark: "#1D4ED8",
+          DEFAULT: "#0A24E9",
+          dark: "#152EAE",
           light: "#3B82F6",
         },
         brandCyan: "#06B6D4",

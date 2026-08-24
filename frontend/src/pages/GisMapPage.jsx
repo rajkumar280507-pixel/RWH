@@ -62,13 +62,16 @@ export default function GisMapPage() {
     queryFn: () => getLatestRainfall(params),
   });
 
+  // Some station objects (e.g. from SearchControl's client-side list) may
+  // carry the identifier under a different key than `station_id` — resolve
+  // whichever is actually present instead of assuming one shape.
+  const stationId = selected?.station_id ?? selected?.id ?? selected?.station_code;
+
   const history = useQuery({
-    queryKey: ["station-history", selected?.kind, selected?.station_id],
+    queryKey: ["station-history", selected?.kind, stationId],
     queryFn: () =>
-      selected.kind === "groundwater"
-        ? getGwHistory(selected.station_id, 365)
-        : getRainfallHistory(selected.station_id, 365),
-    enabled: !!selected,
+      selected.kind === "groundwater" ? getGwHistory(stationId, 365) : getRainfallHistory(stationId, 365),
+    enabled: Boolean(selected && stationId),
   });
 
   const chartSeries = history.data

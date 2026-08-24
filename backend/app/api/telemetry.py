@@ -24,11 +24,11 @@ _GW_LATEST_SQL = text(
            latitude, longitude, water_level_m, raw_water_level_m, recorded_at,
            TIMESTAMPDIFF(HOUR, recorded_at, NOW()) AS age_hours
     FROM v_gw_latest
-    WHERE (:district IS NULL OR district = :district)
-      AND (:state IS NULL OR state = :state)
-      AND (:taluk IS NULL OR taluk = :taluk)
+    WHERE (:district IS NULL OR LOWER(TRIM(district)) = LOWER(TRIM(:district)))
+      AND (:state IS NULL OR LOWER(TRIM(state)) = LOWER(TRIM(:state)))
+      AND (:taluk IS NULL OR LOWER(TRIM(taluk)) = LOWER(TRIM(:taluk)))
       AND (:max_age_days IS NULL OR recorded_at > (NOW() - INTERVAL :max_age_days DAY))
-      AND (:search IS NULL OR station_name LIKE CONCAT('%', :search, '%'))
+      AND (:search IS NULL OR LOWER(station_name) LIKE LOWER(CONCAT('%', :search, '%')))
     ORDER BY recorded_at DESC
     LIMIT :limit
     """
@@ -40,11 +40,11 @@ _RAINFALL_LATEST_SQL = text(
            latitude, longitude, rainfall_mm, recorded_at,
            TIMESTAMPDIFF(HOUR, recorded_at, NOW()) AS age_hours
     FROM v_rainfall_latest
-    WHERE (:district IS NULL OR district = :district)
-      AND (:state IS NULL OR state = :state)
-      AND (:taluk IS NULL OR taluk = :taluk)
+    WHERE (:district IS NULL OR LOWER(TRIM(district)) = LOWER(TRIM(:district)))
+      AND (:state IS NULL OR LOWER(TRIM(state)) = LOWER(TRIM(:state)))
+      AND (:taluk IS NULL OR LOWER(TRIM(taluk)) = LOWER(TRIM(:taluk)))
       AND (:max_age_days IS NULL OR recorded_at > (NOW() - INTERVAL :max_age_days DAY))
-      AND (:search IS NULL OR station_name LIKE CONCAT('%', :search, '%'))
+      AND (:search IS NULL OR LOWER(station_name) LIKE LOWER(CONCAT('%', :search, '%')))
     ORDER BY recorded_at DESC
     LIMIT :limit
     """
@@ -61,17 +61,52 @@ def latest_groundwater(
     limit: int = Query(default=1000, le=5000),
     db: Session = Depends(get_db),
 ):
+    clean_district = district.strip() if district else None
+    clean_state = state.strip() if state else None
+    clean_taluk = taluk.strip() if taluk else None
+    clean_search = search.strip() if search else None
+
+    # Step 1: Exact search with taluk & max_age_days
     rows = db.execute(
         _GW_LATEST_SQL,
         {
-            "district": district,
-            "state": state,
-            "taluk": taluk,
+            "district": clean_district,
+            "state": clean_state,
+            "taluk": clean_taluk,
             "max_age_days": max_age_days,
-            "search": search,
+            "search": clean_search,
             "limit": limit,
         },
     ).mappings().all()
+
+    # Step 2: Fallback to district level if taluk has 0 stations
+    if not rows and clean_taluk and clean_district:
+        rows = db.execute(
+            _GW_LATEST_SQL,
+            {
+                "district": clean_district,
+                "state": clean_state,
+                "taluk": None,
+                "max_age_days": max_age_days,
+                "search": clean_search,
+                "limit": limit,
+            },
+        ).mappings().all()
+
+    # Step 3: Fallback without max_age_days date cutoff if still 0 rows
+    if not rows and max_age_days is not None:
+        rows = db.execute(
+            _GW_LATEST_SQL,
+            {
+                "district": clean_district,
+                "state": clean_state,
+                "taluk": clean_taluk,
+                "max_age_days": None,
+                "search": clean_search,
+                "limit": limit,
+            },
+        ).mappings().all()
+
     return [GwReadingOut.model_validate(row) for row in rows]
 
 
@@ -85,17 +120,52 @@ def latest_rainfall(
     limit: int = Query(default=1000, le=5000),
     db: Session = Depends(get_db),
 ):
+    clean_district = district.strip() if district else None
+    clean_state = state.strip() if state else None
+    clean_taluk = taluk.strip() if taluk else None
+    clean_search = search.strip() if search else None
+
+    # Step 1: Exact search with taluk & max_age_days
     rows = db.execute(
         _RAINFALL_LATEST_SQL,
         {
-            "district": district,
-            "state": state,
-            "taluk": taluk,
+            "district": clean_district,
+            "state": clean_state,
+            "taluk": clean_taluk,
             "max_age_days": max_age_days,
-            "search": search,
+            "search": clean_search,
             "limit": limit,
         },
     ).mappings().all()
+
+    # Step 2: Fallback to district level if micro-taluk has 0 dedicated rainfall stations
+    if not rows and clean_taluk and clean_district:
+        rows = db.execute(
+            _RAINFALL_LATEST_SQL,
+            {
+                "district": clean_district,
+                "state": clean_state,
+                "taluk": None,
+                "max_age_days": max_age_days,
+                "search": clean_search,
+                "limit": limit,
+            },
+        ).mappings().all()
+
+    # Step 3: Fallback without max_age_days date cutoff if still 0 rows
+    if not rows and max_age_days is not None:
+        rows = db.execute(
+            _RAINFALL_LATEST_SQL,
+            {
+                "district": clean_district,
+                "state": clean_state,
+                "taluk": clean_taluk,
+                "max_age_days": None,
+                "search": clean_search,
+                "limit": limit,
+            },
+        ).mappings().all()
+
     return [RainfallReadingOut.model_validate(row) for row in rows]
 
 

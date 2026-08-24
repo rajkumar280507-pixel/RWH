@@ -198,9 +198,10 @@ export default function GisMap({
                     </span>
                     <Link
                       to={`/rwh-design?taluk=${encodeURIComponent(locName)}&lat=${s.latitude}&lng=${s.longitude}&gw=${s.water_level_m || ""}`}
-                      className="inline-flex items-center gap-1 rounded bg-sky-600 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-sky-700 shadow"
+                      className="mt-1 flex items-center justify-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white !text-white transition-all hover:bg-sky-500 hover:shadow-md hover:shadow-sky-500/30 active:scale-95 shadow-sm cursor-pointer"
                     >
-                      📐 Design RWH Pit →
+                      <span>📐 Design RWH Pit</span>
+                      <span className="text-sky-200">→</span>
                     </Link>
                   </div>
                 </Popup>
@@ -240,9 +241,10 @@ export default function GisMap({
                     </span>
                     <Link
                       to={`/rwh-design?taluk=${encodeURIComponent(locName)}&lat=${s.latitude}&lng=${s.longitude}&rf=${s.rainfall_mm || ""}`}
-                      className="inline-flex items-center gap-1 rounded bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-blue-700 shadow"
+                      className="mt-1 flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white !text-white transition-all hover:bg-blue-500 hover:shadow-md hover:shadow-blue-500/30 active:scale-95 shadow-sm cursor-pointer"
                     >
-                      📐 Design RWH Pit →
+                      <span>📐 Design RWH Pit</span>
+                      <span className="text-blue-200">→</span>
                     </Link>
                   </div>
                 </Popup>

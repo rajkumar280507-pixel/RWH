@@ -1,15 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { MapPinned, PenSquare, RotateCcw, AlertTriangle } from "lucide-react";
+import { RotateCcw, AlertTriangle } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import DesignForm from "../components/DesignForm.jsx";
 import DesignResults from "../components/DesignResults.jsx";
 import QuantityTakeoffPanel from "../components/cad/QuantityTakeoffPanel.jsx";
-import DrawRoofMap from "../maps/DrawRoofMap.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
-import { getRoofMaterials, getSoilTypes, getLiveContext, createRwhDesign } from "../services/api.js";
-import { polygonAreaSqm, polygonCentroid, squareFootprint, TN_CENTER } from "../lib/geo.js";
+import {
+  getRoofMaterials,
+  getSoilTypes,
+  getLiveContext,
+  createRwhDesign,
+  getFilterOptions,
+  getLatestGroundwater,
+  getLatestRainfall,
+} from "../services/api.js";
+import { squareFootprint, TN_CENTER } from "../lib/geo.js";
 
 /**
  * Persistent two-column RWH design workspace: the left ~30% column captures
@@ -23,32 +31,98 @@ import { polygonAreaSqm, polygonCentroid, squareFootprint, TN_CENTER } from "../
  * for both the numbers and the persisted design record.
  */
 export default function RwhDesignPage() {
+  const [searchParams] = useSearchParams();
+  const urlTaluk = searchParams.get("taluk") || "";
+  const urlLat = searchParams.get("lat");
+  const urlLng = searchParams.get("lng");
+  const urlGw = searchParams.get("gw");
+  const urlRf = searchParams.get("rf");
+  const urlRoofArea = searchParams.get("roofArea");
+  const urlRoofMaterial = searchParams.get("roofMaterial");
+
   const [result, setResult] = useState(null);
-  const [roofMode, setRoofMode] = useState("map"); // "map" | "manual"
-  const [polygon, setPolygon] = useState(null);
-  const [manualAreaSqm, setManualAreaSqm] = useState(150);
+  const [manualAreaSqm, setManualAreaSqm] = useState(() => (urlRoofArea ? Number(urlRoofArea) || 150 : 150));
+  const [district, setDistrict] = useState(() => localStorage.getItem("rwh_district") || "");
+  const [taluk, setTaluk] = useState(() => urlTaluk || localStorage.getItem("rwh_taluk") || "");
+
+  useEffect(() => {
+    if (urlTaluk) {
+      setTaluk(urlTaluk);
+    }
+  }, [urlTaluk]);
+
+  useEffect(() => {
+    const syncLocation = () => {
+      const d = localStorage.getItem("rwh_district") || "";
+      const t = localStorage.getItem("rwh_taluk") || "";
+      if (d !== district) setDistrict(d);
+      if (!urlTaluk && t !== taluk) setTaluk(t);
+    };
+    window.addEventListener("storage", syncLocation);
+    window.addEventListener("focus", syncLocation);
+    return () => {
+      window.removeEventListener("storage", syncLocation);
+      window.removeEventListener("focus", syncLocation);
+    };
+  }, [district, taluk, urlTaluk]);
 
   const roofMaterialsQ = useQuery({ queryKey: ["roof-materials"], queryFn: getRoofMaterials, staleTime: Infinity });
   const soilTypesQ = useQuery({ queryKey: ["soil-types"], queryFn: getSoilTypes, staleTime: Infinity });
+  const filterOptionsQ = useQuery({ queryKey: ["filter-options"], queryFn: getFilterOptions, staleTime: 300_000 });
 
-  const roofAreaSqm = useMemo(() => {
-    if (roofMode === "map") return polygon ? polygonAreaSqm(polygon) : 0;
-    return Number(manualAreaSqm) || 0;
-  }, [roofMode, polygon, manualAreaSqm]);
+  const roofAreaSqm = Number(manualAreaSqm) || 0;
+
+  // Real station coordinates for the selected District/Taluk — averaged
+  // from whichever live groundwater/rainfall stations actually match, so the
+  // live-context lookup below reflects the operator's chosen project
+  // location instead of always centering on the same Tamil Nadu centroid.
+  // Real station coordinates and live telemetry for the selected District/Taluk
+  const siteStationsQ = useQuery({
+    queryKey: ["rwh-site-stations", district, taluk],
+    queryFn: async () => {
+      const params = { district, ...(taluk ? { taluk } : {}) };
+      const [gw, rf] = await Promise.all([getLatestGroundwater(params), getLatestRainfall(params)]);
+      return { gw, rf, all: [...gw, ...rf] };
+    },
+    staleTime: 60_000,
+  });
+
+  const liveAvgGw = useMemo(() => {
+    if (urlGw) return Number(Number(urlGw).toFixed(2));
+    const gwList = siteStationsQ.data?.gw ?? [];
+    const valid = gwList.map((d) => Number(d.water_level_m)).filter((v) => !isNaN(v) && v != null);
+    if (!valid.length) return null;
+    const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+    return Number(Math.abs(avg).toFixed(2));
+  }, [urlGw, siteStationsQ.data]);
+
+  const liveAvgRf = useMemo(() => {
+    if (urlRf) return Number(Number(urlRf).toFixed(2));
+    const rfList = siteStationsQ.data?.rf ?? [];
+    const valid = rfList.map((d) => Number(d.rainfall_mm)).filter((v) => !isNaN(v) && v != null);
+    if (!valid.length) return null;
+    const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+    return Number(avg.toFixed(2));
+  }, [urlRf, siteStationsQ.data]);
 
   const center = useMemo(() => {
-    if (roofMode === "map" && polygon) return polygonCentroid(polygon);
-    return TN_CENTER;
-  }, [roofMode, polygon]);
+    if (urlLat && urlLng) {
+      return { lat: Number(urlLat), lon: Number(urlLng) };
+    }
+    const stations = siteStationsQ.data?.all ?? [];
+    const withCoords = stations.filter((s) => s.latitude != null && s.longitude != null);
+    if (!withCoords.length) return TN_CENTER;
+    const lat = withCoords.reduce((s, r) => s + Number(r.latitude), 0) / withCoords.length;
+    const lon = withCoords.reduce((s, r) => s + Number(r.longitude), 0) / withCoords.length;
+    return { lat, lon };
+  }, [urlLat, urlLng, siteStationsQ.data]);
 
-  const hasPolygon = roofMode === "map" ? !!polygon : roofAreaSqm > 0;
+  const hasPolygon = roofAreaSqm > 0;
 
-  // Shared by both the real submit (below) and DesignForm's debounced
-  // live-preview dry run, so the two build the exact same footprint.
   const footprint = useMemo(() => {
     if (!hasPolygon) return null;
-    return roofMode === "map" && polygon ? polygon : squareFootprint(center.lat, center.lon, roofAreaSqm);
-  }, [hasPolygon, roofMode, polygon, center, roofAreaSqm]);
+    return squareFootprint(center.lat, center.lon, roofAreaSqm);
+  }, [hasPolygon, center, roofAreaSqm]);
 
   const liveContextQ = useQuery({
     queryKey: ["rwh-live-context", center.lon, center.lat],
@@ -73,49 +147,39 @@ export default function RwhDesignPage() {
 
   return (
     <DashboardLayout
-      title="Rainwater Harvesting Design Studio"
-      subtitle="Draw or specify a rooftop catchment, then generate an engineering-grade recharge design from the live CGWB/NWDP-fed calculation engine."
+      title={result ? "RWH Design Results & 2D CAD Blueprint" : "RWH Design Inputs"}
+      contentClassName="w-full p-3 sm:p-6"
       actions={
         result ? (
           <button
             type="button"
             onClick={handleNewDesign}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-panel/60 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-accent/40 hover:text-accent dark:border-slate-800 dark:text-slate-300"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-panel/60 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-sky-500/40 hover:text-sky-600 dark:border-slate-800 dark:text-slate-300 cursor-pointer shadow-sm"
           >
-            <RotateCcw size={14} />
-            New Design
+            <RotateCcw size={14} className="text-sky-500" />
+            ← Edit Inputs
           </button>
         ) : null
       }
     >
-      {/* True two-column workspace (~30/70), matching the ~70/30 dominant-map
-          pattern established on DashboardPage.jsx. Both columns are always
-          mounted — this is purely a layout change, the data flow (submit /
-          live dry-run preview) is unchanged. Stacks to one column below
-          `lg`, same breakpoint used across the rest of the shell. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_7fr] lg:items-start">
-        {/* LEFT: rooftop capture + design inputs, independently scrollable
-            and sticky within DashboardLayout's own `<main>` scroll
-            container so it stays in view while the (usually taller) right
-            column scrolls past it. */}
+      {/* 2-Step Workflow: Stage 1 = Inputs Only (Centered); Stage 2 = Results (Full CAD Drawings & Metrics) */}
+      {!result ? (
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1"
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="mx-auto flex max-w-2xl flex-col gap-4"
         >
           <RoofCapturePanel
-            roofMode={roofMode}
-            setRoofMode={setRoofMode}
-            polygon={polygon}
-            setPolygon={setPolygon}
             manualAreaSqm={manualAreaSqm}
             setManualAreaSqm={setManualAreaSqm}
             roofAreaSqm={roofAreaSqm}
+            district={district}
+            taluk={taluk}
           />
 
-          <div className="glass-panel rounded-xl border border-slate-200 p-3.5 dark:border-slate-800">
-            <h2 className="mb-2.5 text-sm font-semibold text-slate-900 dark:text-slate-100">Design Inputs</h2>
+          <div className="glass-panel rounded-xl border border-slate-200 p-4 shadow-sm dark:border-slate-800">
+            <h2 className="mb-3 text-base font-bold text-slate-900 dark:text-slate-100">Design Inputs</h2>
             {roofMaterialsQ.isLoading || soilTypesQ.isLoading ? (
               <div className="flex flex-col gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -137,6 +201,9 @@ export default function RwhDesignPage() {
                 liveContext={liveContextQ.data}
                 roofAreaSqm={roofAreaSqm}
                 footprint={footprint}
+                initialGw={liveAvgGw}
+                initialRf={liveAvgRf}
+                initialRoofMaterial={urlRoofMaterial}
                 onSubmit={handleSubmit}
               />
             )}
@@ -153,86 +220,49 @@ export default function RwhDesignPage() {
             )}
           </div>
         </motion.div>
-
-        {/* RIGHT: the generated design, or a friendly empty state prompting
-            the operator to use the form on the left — never a blank box. */}
+      ) : (
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05, ease: "easeOut" }}
-          className="flex flex-col gap-4"
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="flex flex-col gap-4 min-w-0"
         >
-          {result && <QuantityTakeoffPanel result={result} />}
           <DesignResults result={result} />
         </motion.div>
-      </div>
+      )}
     </DashboardLayout>
   );
 }
 
-function RoofCapturePanel({ roofMode, setRoofMode, polygon, setPolygon, manualAreaSqm, setManualAreaSqm, roofAreaSqm }) {
+function RoofCapturePanel({
+  manualAreaSqm,
+  setManualAreaSqm,
+  roofAreaSqm,
+  district,
+  taluk,
+}) {
   return (
-    <div className="glass-panel flex flex-col gap-3 rounded-xl border border-slate-200 p-3.5 dark:border-slate-800">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Rooftop Catchment</h2>
-        <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px] dark:border-slate-800 dark:bg-slate-900/60">
-          <ModeButton active={roofMode === "map"} onClick={() => setRoofMode("map")} icon={MapPinned} label="Draw" />
-          <ModeButton active={roofMode === "manual"} onClick={() => setRoofMode("manual")} icon={PenSquare} label="Enter area" />
-        </div>
+    <div className="glass-panel flex flex-col gap-3.5 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Rooftop Catchment</h2>
+
+      <div className="flex items-center justify-between rounded-xl border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-xs">
+        <span className="font-medium text-slate-600 dark:text-slate-400">Dashboard Location</span>
+        <span className="font-bold text-sky-600 dark:text-sky-400">
+          {district ? `${district}${taluk ? ` › ${taluk}` : ""}` : "Tamil Nadu (Default)"}
+        </span>
       </div>
 
-      {roofMode === "map" ? (
-        <>
-          <div className="h-[320px] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-            <DrawRoofMap onChange={setPolygon} />
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Use the rectangle/polygon tool in the map's top-right toolbar to trace the rooftop outline. Area and the
-            nearest live rainfall/groundwater stations are picked up automatically.
-          </p>
-        </>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
-            Roof area (m²)
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={manualAreaSqm}
-              onChange={(e) => setManualAreaSqm(Math.max(1, Number(e.target.value)))}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-accent focus:outline-none dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-100"
-            />
-          </label>
-          <p className="text-[11px] text-warning">
-            No location is captured in manual mode, so a nominal site coordinate is used for live rainfall/groundwater
-            lookup — switch to "Draw on map" for an accurate live-telemetry match, or fill rainfall/groundwater in
-            manually below.
-          </p>
-        </div>
-      )}
-
-      <div className="mt-1 flex items-center justify-between rounded-lg border border-accent/20 bg-accent/5 px-3 py-2 text-xs">
-        <span className="text-slate-500 dark:text-slate-400">Catchment area</span>
-        <span className="font-semibold text-accent">{roofAreaSqm > 0 ? `${roofAreaSqm.toFixed(1)} m²` : "—"}</span>
-      </div>
+      <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 dark:text-slate-400">
+        Roof area (m²)
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={manualAreaSqm}
+          onChange={(e) => setManualAreaSqm(Math.max(1, Number(e.target.value)))}
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+        />
+      </label>
     </div>
-  );
-}
-
-function ModeButton({ active, onClick, icon: Icon, label }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium transition ${
-        active
-          ? "bg-accent/15 text-accent"
-          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-      }`}
-    >
-      <Icon size={12} />
-      {label}
-    </button>
   );
 }
