@@ -199,7 +199,7 @@ export default function DesignResults({ result }) {
         ))}
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={tab}
           initial={{ opacity: 0, y: 4 }}
