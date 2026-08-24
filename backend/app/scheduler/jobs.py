@@ -6,12 +6,14 @@ stat cards update live without a page refresh.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config.settings import get_settings
 from app.database.session import SessionLocal
+from app.models.telemetry import SyncRun
 from app.services.sync_service import SyncService
 from app.websocket.manager import manager
 
@@ -88,10 +90,36 @@ def start_scheduler() -> None:
     logger.info("Scheduler started: sync every %s minutes", settings.sync_interval_minutes)
 
 
+def _mark_orphaned_runs_failed() -> None:
+    """A process that's just starting up cannot own a `sync_runs` row still
+    marked "running" — that row belongs to a previous process instance that
+    was killed (redeploy, crash, container restart) before it reached the
+    `finally` block in `SyncService._run_sync()` that would otherwise always
+    set a final status. Left alone, these rows permanently poison
+    `dashboard.last_gw_sync`/`last_rainfall_sync` (which only count
+    'success'/'partial' rows), making completed syncs invisible.
+    """
+    db = SessionLocal()
+    try:
+        orphaned = db.query(SyncRun).filter(SyncRun.status == "running").all()
+        if not orphaned:
+            return
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        for run in orphaned:
+            run.status = "failed"
+            run.finished_at = now
+            run.error_message = "Interrupted: process restarted before this sync run finished."
+        db.commit()
+        logger.warning("Marked %d orphaned sync_runs row(s) as failed on startup", len(orphaned))
+    finally:
+        db.close()
+
+
 def trigger_initial_sync() -> None:
     """Run both syncs once immediately in the background, then let the
     interval trigger take over for subsequent hourly runs.
     """
+    _mark_orphaned_runs_failed()
     scheduler.add_job(run_groundwater_sync, id="sync_groundwater_initial")
     scheduler.add_job(run_rainfall_sync, id="sync_rainfall_initial")
 
