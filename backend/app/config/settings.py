@@ -1,6 +1,7 @@
 """Centralized application settings, loaded from environment variables / .env."""
+import os
 from functools import lru_cache
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,21 @@ class Settings(BaseSettings):
         "mysql+pymysql://rwh:rwh_app_pw@localhost:3306/rwh"
     )
 
+    # Railway's MySQL plugin exposes these discrete variables on the
+    # database service, but a backend service only gets them for free if
+    # something references them into its own env (e.g. a DATABASE_URL
+    # variable set to `${{MySQL.MYSQL_URL}}`). If that reference was never
+    # added, DATABASE_URL falls back to the localhost default above and the
+    # app crashes trying to reach a MySQL server that doesn't exist in the
+    # container. These fields let `_build_database_url_from_parts` below
+    # assemble a working URL directly from Railway's own variables instead,
+    # so the backend connects correctly either way.
+    mysqlhost: str | None = None
+    mysqlport: str | None = None
+    mysqluser: str | None = None
+    mysqlpassword: str | None = None
+    mysqldatabase: str | None = None
+
     @field_validator("database_url")
     @classmethod
     def _use_pymysql_driver(cls, v: str) -> str:
@@ -23,6 +39,21 @@ class Settings(BaseSettings):
         if v.startswith("mysql://"):
             return "mysql+pymysql://" + v[len("mysql://") :]
         return v
+
+    @model_validator(mode="after")
+    def _build_database_url_from_parts(self) -> "Settings":
+        # Only kicks in when DATABASE_URL itself was never set in the
+        # environment (local dev's .env always sets it explicitly, so this
+        # is a no-op there) and Railway's discrete MySQL variables are
+        # present — i.e. exactly the "fresh Railway service, no DATABASE_URL
+        # reference wired up yet" situation.
+        if "DATABASE_URL" not in os.environ and self.mysqlhost:
+            port = self.mysqlport or "3306"
+            self.database_url = (
+                f"mysql+pymysql://{self.mysqluser}:{self.mysqlpassword}"
+                f"@{self.mysqlhost}:{port}/{self.mysqldatabase}"
+            )
+        return self
 
     redis_url: str = "redis://localhost:6379/0"
 
