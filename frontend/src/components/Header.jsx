@@ -15,10 +15,23 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useUiStore } from "../store/uiStore.js";
+import { useAuthStore } from "../store/authStore.js";
 import { useClock } from "../hooks/useClock.js";
+
+const ROLE_LABELS = {
+  civil_engineer: "Civil Engineer",
+  municipal_employee: "Municipal Employee",
+  builder: "Builder / Contractor",
+  consultant: "Consultant",
+  researcher: "Researcher",
+  office_staff: "Office Staff",
+  admin: "Administrator",
+};
 
 export default function Header() {
   const openCommandPalette = useUiStore((s) => s.openCommandPalette);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const { time, date } = useClock();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -148,6 +161,50 @@ export default function Header() {
             </AnimatePresence>
           </div>
 
+          {/* Account: Login link when signed out, name + role menu when signed in */}
+          {user ? (
+            <div className="relative hidden sm:block" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((o) => !o)}
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-400 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                  <User size={13} />
+                </span>
+                <span className="max-w-[9rem] truncate">{user.full_name || user.username}</span>
+                <ChevronDown size={13} className="text-slate-400" />
+              </button>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="glass-panel absolute right-0 top-full z-[600] mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <div className="border-b border-slate-100 pb-2 dark:border-slate-800">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">{user.full_name || user.username}</div>
+                      <div className="text-[11px] text-slate-500">{ROLE_LABELS[user.role] || user.role}</div>
+                      {user.organization && <div className="text-[11px] text-slate-400">{user.organization}</div>}
+                    </div>
+                    <div className="mt-2">
+                      <ProfileMenuItem icon={LogOut} label="Sign out" tone="danger" onClick={logout} />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-600 transition hover:bg-sky-500/20 dark:text-sky-400 sm:flex"
+            >
+              <User size={14} /> Sign in
+            </Link>
+          )}
+
           {/* Mobile Menu Toggle Button */}
           <button
             type="button"
@@ -194,10 +251,11 @@ export default function Header() {
   );
 }
 
-function ProfileMenuItem({ icon: Icon, label, tone = "normal" }) {
+function ProfileMenuItem({ icon: Icon, label, tone = "normal", onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
         tone === "danger"
           ? "text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { FileText, Printer, QrCode, Download, Loader2, Trash2, AlertTriangle, Layers } from "lucide-react";
@@ -177,6 +178,17 @@ export default function ReportsPage() {
               </button>
             )}
           </div>
+
+          {(removeDesign.isError || removeAllDesigns.isError) && (
+            <div className="mb-2 flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 p-2 text-[11px] text-danger">
+              <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+              <span>
+                {(removeDesign.error || removeAllDesigns.error)?.response?.status === 401
+                  ? <>Deleting a design requires an account. <Link to="/login" className="font-semibold underline">Sign in</Link>.</>
+                  : (removeDesign.error || removeAllDesigns.error)?.response?.data?.detail || "Delete failed."}
+              </span>
+            </div>
+          )}
 
           {designs.isLoading && (
             <div className="flex flex-col gap-1.5">
@@ -402,7 +414,11 @@ function ReportGenerationPanel({ designId, detailData }) {
       {generate.isError && (
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 p-2.5 text-[11px] text-danger">
           <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-          Failed to generate report: {generate.error?.response?.data?.detail ?? generate.error?.message ?? "unknown error"}
+          {generate.error?.response?.status === 401 ? (
+            <span>Generating a PDF report requires an account. <Link to="/login" className="font-semibold underline">Sign in</Link>.</span>
+          ) : (
+            <span>Failed to generate report: {generate.error?.response?.data?.detail ?? generate.error?.message ?? "unknown error"}</span>
+          )}
         </div>
       )}
 

@@ -4,6 +4,7 @@
 -- own working directory — run mysql from inside database/, or use the
 -- full-path variant your OS needs)
 source schema.sql
+source users.sql
 source groundwater.sql
 source rainfall.sql
 source building.sql

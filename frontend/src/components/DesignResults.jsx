@@ -20,13 +20,14 @@ import {
   IndianRupee,
   Ruler,
   Shovel,
+  FileDown,
 } from "lucide-react";
 import EmptyState from "./ui/EmptyState.jsx";
 import EngineeringDrawings2D from "./EngineeringDrawings2D.jsx";
 import RechargeStructureScene from "./three/RechargeStructureScene.jsx";
 import QuantityTakeoffPanel from "./cad/QuantityTakeoffPanel.jsx";
 import WaterDemandTab from "./water/WaterDemandTab.jsx";
-import { generateReport, downloadReportUrl } from "../services/api.js";
+import { generateReport, downloadReportUrl, downloadDxfUrl } from "../services/api.js";
 
 // Serializes the currently-rendered CAD <svg> (whichever view tab is active)
 // into a self-contained base64 data URL the backend can embed directly as an
@@ -144,6 +145,15 @@ export default function DesignResults({ result }) {
               className="flex items-center gap-1.5 rounded-xl border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/20"
             >
               <Download size={13} /> Download PDF
+            </a>
+          )}
+          {result.design_id != null && (
+            <a
+              href={downloadDxfUrl(result.design_id)}
+              title="Real .dxf CAD file — opens in AutoCAD, Civil 3D, DraftSight, or LibreCAD"
+              className="flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-600 transition hover:bg-purple-500/20 dark:text-purple-400 cursor-pointer"
+            >
+              <FileDown size={13} /> Download DXF
             </a>
           )}
           <button

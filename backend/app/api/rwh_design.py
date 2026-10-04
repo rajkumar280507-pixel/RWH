@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user, get_current_user_optional, require_admin
 from app.database.session import get_db
 from app.gis.geometry import polygon_area_sqm_and_centroid
+from app.models.user import User
 from app.repositories import design_repository
 from app.schemas.design import LiveDataSource, RwhDesignRequest, RwhDesignResponse
 from app.services import live_data_service
@@ -17,7 +19,11 @@ router = APIRouter(prefix="/api/rwh", tags=["rwh-design"])
 
 
 @router.post("/design", response_model=RwhDesignResponse)
-def create_design(payload: RwhDesignRequest, db: Session = Depends(get_db)):
+def create_design(
+    payload: RwhDesignRequest,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
+):
     roof_geojson = payload.roof.model_dump() if payload.roof else payload.footprint.model_dump()
 
     area_sqm, lon, lat = polygon_area_sqm_and_centroid(roof_geojson)
@@ -120,7 +126,12 @@ def create_design(payload: RwhDesignRequest, db: Session = Depends(get_db)):
             runoff_coefficient=result.runoff_coefficient,
         )
         design = design_repository.save_design(
-            db, building_id=building.id, roof_id=roof.id, inputs=inputs, result=result
+            db,
+            building_id=building.id,
+            roof_id=roof.id,
+            inputs=inputs,
+            result=result,
+            created_by=current_user.id if current_user else None,
         )
         building_id, roof_id, design_id = building.id, roof.id, design.id
 
@@ -198,9 +209,26 @@ def get_design(design_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/design/{design_id}")
-def delete_design(design_id: int, db: Session = Depends(get_db)):
+def delete_design(
+    design_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Deletes a saved design; child rows (pits/trenches/borewells/filter
-    media/BOQ) cascade via FK ON DELETE CASCADE."""
+    media/BOQ) cascade via FK ON DELETE CASCADE. Requires login: the design's
+    own owner, or an admin, may delete it — legacy designs saved before
+    accounts existed (created_by IS NULL) can be deleted by any logged-in
+    user, same as before this feature existed.
+    """
+    row = db.execute(
+        text("SELECT created_by FROM rwh_designs WHERE id = :id"), {"id": design_id}
+    ).mappings().one_or_none()
+    if row is None:
+        raise HTTPException(404, "Design not found")
+    owner = row["created_by"]
+    if owner is not None and owner != current_user.id and current_user.role != "admin":
+        raise HTTPException(403, "You don't own this design")
+
     result = db.execute(text("DELETE FROM rwh_designs WHERE id = :id"), {"id": design_id})
     db.commit()
     if result.rowcount == 0:
@@ -209,8 +237,11 @@ def delete_design(design_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/designs")
-def delete_all_designs(db: Session = Depends(get_db)):
-    """Deletes all saved designs."""
+def delete_all_designs(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Deletes all saved designs. Admin-only — too destructive for a regular account."""
     result = db.execute(text("DELETE FROM rwh_designs"))
     db.commit()
     return {"deleted_count": result.rowcount}
@@ -237,6 +268,39 @@ def list_designs(db: Session = Depends(get_db)):
             LIMIT 200
             """
         )
+    ).mappings().all()
+    return [dict(r) for r in rows]
+
+
+@router.get("/designs/mine")
+def list_my_designs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Same shape as GET /designs, filtered to the logged-in user's own
+    designs — backs a personalized view for accounts that want to track
+    their own work separately from the full shared list.
+    """
+    rows = db.execute(
+        text(
+            """
+            SELECT d.id, d.building_id, d.structure_type, d.status, d.created_at,
+                   d.catchment_area_sqm, d.annual_harvest_m3, d.annual_recharge_m3,
+                   d.annual_rainfall_mm, d.groundwater_depth_m, d.hydrologic_soil_group,
+                   b.name AS building_name, b.building_type,
+                   b.centroid_lat AS latitude, b.centroid_lon AS longitude,
+                   (SELECT COALESCE(SUM(amount_inr), 0) FROM boq_items q WHERE q.design_id = d.id)
+                       AS estimated_cost_inr,
+                   EXISTS(SELECT 1 FROM injection_borewells w WHERE w.design_id = d.id)
+                       AS has_injection_borewell
+            FROM rwh_designs d
+            JOIN buildings b ON b.id = d.building_id
+            WHERE d.created_by = :user_id
+            ORDER BY d.created_at DESC
+            LIMIT 200
+            """
+        ),
+        {"user_id": current_user.id},
     ).mappings().all()
     return [dict(r) for r in rows]
 

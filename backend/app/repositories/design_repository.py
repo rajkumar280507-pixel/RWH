@@ -92,6 +92,7 @@ def save_design(
     roof_id: int | None,
     inputs: RwhDesignInput,
     result: RwhDesignResult,
+    created_by: int | None = None,
 ) -> RwhDesign:
     design = RwhDesign(
         building_id=building_id,
@@ -105,6 +106,7 @@ def save_design(
         hydrologic_soil_group=result.hydrologic_soil_group,
         structure_type=result.structure_type,
         status="draft",
+        created_by=created_by,
     )
     db.add(design)
     db.flush()

@@ -20,13 +20,15 @@ from pathlib import Path
 
 import qrcode
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.config.settings import get_settings
 from app.database.session import get_db
+from app.models.user import User
 from app.pdf.render import PdfRenderError, render_report_pdf
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -173,7 +175,12 @@ def _sanitize_data_url(value: str | None) -> str | None:
 
 
 @router.post("/{design_id}/generate")
-def generate_report(design_id: int, payload: ReportGenerateRequest, db: Session = Depends(get_db)):
+def generate_report(
+    design_id: int,
+    payload: ReportGenerateRequest,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
     bundle = _fetch_design_bundle(db, design_id)
     if bundle is None:
         raise HTTPException(404, "Design not found")
@@ -313,4 +320,26 @@ def download_report(design_id: int, db: Session = Depends(get_db)):
         path=str(pdf_path),
         media_type="application/pdf",
         filename=f"rwh-design-{design_id}-report.pdf",
+    )
+
+
+@router.get("/{design_id}/export.dxf")
+def export_dxf(design_id: int, db: Session = Depends(get_db)):
+    """Real, standards-compliant .dxf export of the design's full 2D CAD
+    sheet (cross section, plan view, filter stack, pipe layout, deep bore —
+    whichever apply) built from the same persisted geometry the PDF report
+    and the frontend's own 2D CAD tab already use. Opens directly in
+    AutoCAD, Civil 3D, DraftSight, LibreCAD, or any DXF-compatible viewer.
+    """
+    from app.services.dxf_export import build_design_dxf
+
+    bundle = _fetch_design_bundle(db, design_id)
+    if bundle is None:
+        raise HTTPException(404, "Design not found")
+
+    dxf_bytes = build_design_dxf(bundle)
+    return Response(
+        content=dxf_bytes,
+        media_type="application/dxf",
+        headers={"Content-Disposition": f'attachment; filename="rwh-design-{design_id}.dxf"'},
     )

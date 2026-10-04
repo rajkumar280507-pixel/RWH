@@ -4,6 +4,8 @@ import RwhDesignPage from "./pages/RwhDesignPage.jsx";
 import GisMapPage from "./pages/GisMapPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import PredictionsPage from "./pages/PredictionsPage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
+import RegisterPage from "./pages/RegisterPage.jsx";
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
         <Route path="/rwh-design" element={<RwhDesignPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/predictions" element={<PredictionsPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Routes>
     </BrowserRouter>
   );

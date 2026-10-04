@@ -12,6 +12,29 @@ const API_BASE = API_HOST ? `${API_HOST}/api` : "/api";
 
 export const api = axios.create({ baseURL: API_BASE });
 
+// Attaches the logged-in user's JWT (if any) to every request. Reads
+// directly from localStorage rather than importing authStore.js, since that
+// store itself imports auth functions from this file — going through the
+// store here would create a circular import.
+api.interceptors.request.use((config) => {
+  try {
+    const raw = localStorage.getItem("rwh-auth");
+    const token = raw ? JSON.parse(raw)?.state?.token : null;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  } catch {
+    // Malformed localStorage value — proceed unauthenticated rather than fail the request.
+  }
+  return config;
+});
+
+// Auth — real multi-role accounts (see backend/app/api/auth.py). Only
+// destructive/attributable actions (deleting a design, generating a PDF
+// report, bulk-deleting) require a logged-in user; browsing telemetry, the
+// GIS map, and running a design calculation stay open to everyone.
+export const register = (payload) => api.post("/auth/register", payload).then((r) => r.data);
+export const login = (payload) => api.post("/auth/login", payload).then((r) => r.data);
+export const getMe = () => api.get("/auth/me").then((r) => r.data);
+
 export const getDashboardStats = () => api.get("/dashboard/stats").then((r) => r.data);
 export const getDistrictSummary = () => api.get("/dashboard/district-summary").then((r) => r.data);
 export const getLatestGroundwater = (params = {}) =>
@@ -62,6 +85,9 @@ export const getReport = (designId) => api.get(`/reports/${designId}`).then((r) 
 // whether or not VITE_API_URL is set, and stays in sync with resolveStaticUrl
 // below rather than each computing the backend origin its own way.
 export const downloadReportUrl = (designId) => `${API_HOST}/api/reports/${designId}/download`;
+// Real .dxf CAD export (AutoCAD/Civil 3D compatible) of the saved design's
+// full drawing set — same URL-resolution pattern as downloadReportUrl.
+export const downloadDxfUrl = (designId) => `${API_HOST}/api/reports/${designId}/export.dxf`;
 // Backend-served static assets (e.g. QR code PNGs under /static/reports/)
 // live outside the /api prefix — resolve them against the same API_HOST.
 export const resolveStaticUrl = (path) => (path ? `${API_HOST}${path}` : null);

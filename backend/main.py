@@ -21,6 +21,19 @@ logger = logging.getLogger("rwh.main")
 get_settings.cache_clear()
 settings = get_settings()
 
+if settings.environment == "production" and settings.jwt_secret == "change-me-in-production":
+    # Loud, not fatal: a hard crash here would take down production the
+    # moment this ships if the Railway variable isn't set yet, which is a
+    # worse outcome than shipping with a known-weak secret for a short
+    # window. But this must not go unnoticed — with the default secret,
+    # anyone who reads this (open) source can forge a valid JWT for any
+    # user id, including admin.
+    logger.warning(
+        "JWT_SECRET is still the source-code default in a production environment — "
+        "anyone who has read this code can forge valid login tokens. Set a real "
+        "JWT_SECRET in Railway's environment variables."
+    )
+
 app = FastAPI(
     title=settings.app_name,
     description="AI-Based Rooftop Rainwater Harvesting Decision Support System",
